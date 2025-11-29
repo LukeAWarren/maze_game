@@ -27,8 +27,27 @@
   const player1_half_height = 2
   const p1_gate_threshold = 2
 
-  ; initialize the first room
+
+  ; alais registers
+  dim coll_detect_x = b
+  dim coll_detect_y = c
+  ; input debouncing for joystick 0
+  dim j0_debounce_up_down = d
+  dim j0_debounce_left_right = e
+
+  ; input debouncing for joystick 1
+  dim j1_debounce_up_down = f
+  dim j1_debounce_left_right = g
   dim room_number = h
+
+  dim mx_mid = i
+  dim my_mid = j
+
+  dim p1_room = k
+  dim p1_x = l
+  dim p1_y = m
+
+  ; initialize the first room
   room_number = 0
 
   const room_right = 1
@@ -95,8 +114,7 @@
   missile1x = 100
   missile1y = 40
 
-  dim coll_detect_x = b
-  dim coll_detect_y = c
+
 
   ; frames to wait before auto-repeat
   const j_debounce_delay = 4
@@ -104,21 +122,6 @@
   ; frames between player1 steps toward midpoint
   const p1_move_delay = 3
 
-  ; input debouncing for joystick 0
-  dim j0_debounce_up_down = d
-  dim j0_debounce_left_right = e
-
-  ; input debouncing for joystick 1
-  dim j1_debounce_up_down = f
-  dim j1_debounce_left_right = g
-
-  dim p1_room = i
-  dim p1_x = j
-  dim p1_y = k
-
-  ; dim p1_target_x = l
-  ; dim p1_target_y = m
-  ; dim p1_mid_delta = n
   ; dim p1_move_counter = o
   ; dim p1_gate_coord = p
   ; dim p1_dest_coord = q
@@ -135,7 +138,7 @@
     %11110000
     %01100000
 end
-  p1_x = 80
+  p1_x = 50
   p1_y = 10
   player1x = p1_x
   player1y = p1_y
@@ -365,53 +368,54 @@ _save_and_hide_p1
   goto _end_p1_logic
 _calc_pos_and_move_p1
 
-; calculate midpoint between m0 and m1
+  ; calculate midpoint between m0 and m1
 
-  ; calculate horizontal endpoint
-  dim mx_delta = temp3
-  dim mx_delta_half = temp4
-  dim mx_mid = temp5
+  dim mid_delta = temp3
+  dim mid_delta_half = temp4
 
-  ; calculate m0 and m1 x midpoint
+  ; calculate horizontal midpoint  
   if missile0x > missile1x then goto _m0_x_right_of_m1_x
-    mx_delta = missile1x - missile0x
-    mx_delta_half = mx_delta / 2
-    mx_mid = missile1x - mx_delta_half
+    mid_delta = missile1x - missile0x
+    mid_delta_half = mid_delta / 2
+    mx_mid = missile1x - mid_delta_half
     mx_mid = mx_mid - 1
-    goto _set_p1_x
+    goto _end_m0_m1_horizontal_midpoint
 _m0_x_right_of_m1_x
-  mx_delta = missile0x - missile1x
-  mx_delta_half = mx_delta / 2
-  mx_mid = missile0x - mx_delta_half
+  mid_delta = missile0x - missile1x
+  mid_delta_half = mid_delta / 2
+  mx_mid = missile0x - mid_delta_half
   mx_mid = mx_mid - 1
+_end_m0_m1_horizontal_midpoint
+
+  ; calculate vertical midpoint
+  if missile0y > missile1y then goto _m0_y_right_of_m1_y
+    mid_delta = missile1y - missile0y
+    mid_delta_half = mid_delta / 2
+    my_mid = missile1y - mid_delta_half    
+    goto _end_m0_m1_vertical_midpoint
+_m0_y_right_of_m1_y
+  mid_delta = missile0y - missile1y
+  mid_delta_half = mid_delta / 2
+  my_mid = missile0y - mid_delta_half
+_end_m0_m1_vertical_midpoint
 
 _set_p1_x
-  if p1_x = mx_mid then goto _end_move_p1
+  if p1_x = mx_mid then goto _end_move_p1_x
   if p1_x < mx_mid then goto _move_p1_right
     p1_x = p1_x - 1
-    goto _end_move_p1
+    goto _end_move_p1_x
 _move_p1_right
   p1_x = p1_x + 1
-_end_move_p1
+_end_move_p1_x
 
-  ; calculate vertical horizontal endpoint
-  dim my_delta = temp3
-  dim my_delta_half = temp4
-  dim my_mid = temp5
-
-  ; calculate m0 and m1 y midpoint
-  if missile0y > missile1y then goto _m0_y_right_of_m1_y
-    my_delta = missile1y - missile0y
-    my_delta_half = my_delta / 2
-    my_mid = missile1y - my_delta_half
-    goto _set_p1_y
-_m0_y_right_of_m1_y
-  my_delta = missile0y - missile1y
-  my_delta_half = my_delta / 2
-  my_mid = missile0y - my_delta_half
-  
 _set_p1_y
-  p1_y = my_mid
+  if p1_y = my_mid then goto _end_move_p1_y
+  if p1_y < my_mid then goto _move_p1_down
+    p1_y = p1_y - 1
+    goto _end_move_p1_y
+_move_p1_down
+  p1_y = p1_y + 1
+_end_move_p1_y
 
 ;  if player1x = (mx_mid - 1) then goto _p1_x_move_end
 ;  if player1x < (mx_mid - 1) then goto _p1_move_left else goto _p1_move_right
