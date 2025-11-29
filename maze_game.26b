@@ -46,6 +46,7 @@
   dim p1_room = k
   dim p1_x = l
   dim p1_y = m
+  dim p1_move_counter = n
 
   ; initialize the first room
   room_number = 0
@@ -122,7 +123,6 @@
   ; frames between player1 steps toward midpoint
   const p1_move_delay = 3
 
-  ; dim p1_move_counter = o
   ; dim p1_gate_coord = p
   ; dim p1_dest_coord = q
   ; dim p1_target_room = r
@@ -131,6 +131,7 @@
   ; dim p1_dy = u
 
   p1_room = 1
+  p1_move_counter = 0
 
   player1:
     %01100000
@@ -364,7 +365,7 @@ _save_and_hide_p1
   p1_x = player1x
   p1_y = player1y
   player1y = offscrn_y
-  ; p1_move_counter = 0
+  p1_move_counter = 0
   goto _end_p1_logic
 _calc_pos_and_move_p1
 
@@ -399,6 +400,11 @@ _m0_y_right_of_m1_y
   my_mid = missile0y - mid_delta_half
 _end_m0_m1_vertical_midpoint
 
+  ; only step every p1_move_delay frames
+  p1_move_counter = p1_move_counter + 1
+  if p1_move_counter <= p1_move_delay then goto _sync_p1_position
+  p1_move_counter = 0
+
 _set_p1_x
   if p1_x = mx_mid then goto _end_move_p1_x
   if p1_x < mx_mid then goto _move_p1_right
@@ -416,6 +422,7 @@ _set_p1_y
 _move_p1_down
   p1_y = p1_y + 1
 _end_move_p1_y
+  goto _sync_p1_position
 
 ;  if player1x = (mx_mid - 1) then goto _p1_x_move_end
 ;  if player1x < (mx_mid - 1) then goto _p1_move_left else goto _p1_move_right
@@ -525,9 +532,10 @@ _end_move_p1_y
 ;  goto _end_p1_logic
 _show_p1
   ; restore saved position
+  p1_move_counter = 0
+_sync_p1_position
   player1x = p1_x
   player1y = p1_y
-  ; p1_move_counter = 0
 _end_p1_logic
 
   drawscreen
