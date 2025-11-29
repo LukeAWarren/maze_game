@@ -47,7 +47,7 @@
   dim p1_x = l
   dim p1_y = m
   dim p1_move_counter = n
-
+  
   ; initialize the first room
   room_number = 0
 
@@ -140,7 +140,7 @@
     %01100000
 end
   p1_x = 50
-  p1_y = 10
+  p1_y = 15
   player1x = p1_x
   player1y = p1_y
   ; p1_y = player1y
@@ -405,23 +405,31 @@ _end_m0_m1_vertical_midpoint
   if p1_move_counter <= p1_move_delay then goto _sync_p1_position
   p1_move_counter = 0
 
-_set_p1_x
-  if p1_x = mx_mid then goto _end_move_p1_x
-  if p1_x < mx_mid then goto _move_p1_right
-    p1_x = p1_x - 1
-    goto _end_move_p1_x
-_move_p1_right
-  p1_x = p1_x + 1
-_end_move_p1_x
+  dim p1_x_next = temp3
+  dim p1_y_next = temp4
 
-_set_p1_y
-  if p1_y = my_mid then goto _end_move_p1_y
-  if p1_y < my_mid then goto _move_p1_down
-    p1_y = p1_y - 1
-    goto _end_move_p1_y
-_move_p1_down
-  p1_y = p1_y + 1
-_end_move_p1_y
+_calc_p1_x_next
+  if p1_x = mx_mid then p1_x_next = p1_x : goto _end_calc_p1_x_next
+  if p1_x < mx_mid then goto _calc_p1_x_next_right
+    p1_x_next = p1_x - 1    
+    goto _end_calc_p1_x_next
+_calc_p1_x_next_right
+  p1_x_next = p1_x + 1
+_end_calc_p1_x_next
+
+_calc_p1_y_next
+  if p1_y = my_mid then p1_y_next = p1_y : goto _end_calc_p1_y_next
+  if p1_y < my_mid then goto _calc_p1_y_next_down
+    p1_y_next = p1_y - 1    
+    goto _end_calc_p1_y_next
+_calc_p1_y_next_down
+  p1_y_next = p1_y + 1
+_end_calc_p1_y_next
+
+  ; perform collision detection to determine if we can move p1
+  p1_x = p1_x_next
+  p1_y = p1_y_next
+
   goto _sync_p1_position
 
 ;  if player1x = (mx_mid - 1) then goto _p1_x_move_end
@@ -597,8 +605,8 @@ _inititial_game_room
     X..............................X
     X..............................X
     X..............................X
-    ...............................X
-    ...............................X
+    ..............XXXX.............X
+    ..............XXXX.............X
     X..............................X
     X..............................X
     X..............................X
