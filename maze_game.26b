@@ -330,7 +330,6 @@ _begin_boundary_check
 
 _end_boundary_check
 
-
   ; if p1_align_midpoint then gosub _p1_place_at_midpoint
 _begin_p1_logic
 
@@ -339,7 +338,7 @@ _begin_p1_logic
   if p1_room = room_number && player1y = offscrn_y then goto _end_p1_logic
   ; if p1 is in the same room as the missiles and it's currently on the screen
   ; then calculate a new position for p1
-  if p1_room = room_number && player1y <> offscrn_y then goto _calc_pos_and_move_p1
+  if p1_room = room_number && player1y <> offscrn_y then goto _restore_pos_and_move_p1
   ; if the missiles are not in the room with the player
   ; but the player is visible then hide it
   if p1_room <> room_number && player1y <> offscrn_y then goto _save_and_hide_p1
@@ -352,8 +351,9 @@ _save_and_hide_p1
   player1y = offscrn_y
   p1_move_counter = 0
   goto _end_p1_logic
+_restore_pos_and_move_p1
+  if p1_room = room_number && player1y = offscrn_y then player1y = p1_y
 _calc_pos_and_move_p1
-  
   ; calculate midpoint between m0 and m1
 
   dim mid_delta = temp3
