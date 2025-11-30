@@ -35,24 +35,18 @@
   dim j1_debounce_left_right = g
 
   ; current room the missiles are in
-  dim room_number = h
+  dim mi_room_number = h
 
   ; a bunch of registeres for dealing with the p1 object
-  dim mx_mid = i
-  dim my_mid = j
-  dim p1_room = k
+  dim p1_room_number = i
 
-  dim p1_y = m
-  dim p1_dx = p
-  dim p1_dy = q
-  dim p1_move_counter = r
-  dim coll_detect_top = s
-  dim coll_detect_bottom = t
-  dim coll_detect_left = u
-  dim coll_detect_right = v
+  dim p1_y = j
+  dim p1_dx = k
+  dim p1_dy = l
+  dim p1_move_counter = m
 
   ; initialize the first room
-  room_number = 0
+  mi_room_number = 0
 
   const room_right = 1
   const room_middle = 2
@@ -132,7 +126,7 @@ end
   player1y = 52
 
   ; p1 starts in room 1
-  p1_room = 1
+  p1_room_number = 1
 
 mainloop
   NUSIZ0 = missle0_width_bin ; four pixels wide
@@ -321,12 +315,12 @@ skip_j1_right
 
 _begin_boundary_check
 
-  if room_number = 0 then goto _inititial_game_room
-  if room_number = room_right then goto _room_right_boundary_check
-  if room_number = room_middle then goto _room_middle_boundary_check
-  if room_number = room_left then goto _room_left_boundary_check
-  if room_number = room_top then goto _room_top_boundary_check
-  if room_number = room_bottom then goto _room_bottom_boundary_check
+  if mi_room_number = 0 then goto _inititial_game_room
+  if mi_room_number = room_right then goto _room_right_boundary_check
+  if mi_room_number = room_middle then goto _room_middle_boundary_check
+  if mi_room_number = room_left then goto _room_left_boundary_check
+  if mi_room_number = room_top then goto _room_top_boundary_check
+  if mi_room_number = room_bottom then goto _room_bottom_boundary_check
 
 _end_boundary_check
 
@@ -335,16 +329,16 @@ _begin_p1_logic
 
   ; always skip one frame after showing p1, m0 and m1 in the room together
   ; this makes it seem like p1 has to notice in the room them before moving toward them
-  if p1_room = room_number && player1y = offscrn_y then goto _end_p1_logic
+  if p1_room_number = mi_room_number && player1y = offscrn_y then goto _end_p1_logic
   ; if p1 is in the same room as the missiles and it's currently on the screen
   ; then calculate a new position for p1
-  if p1_room = room_number && player1y <> offscrn_y then goto _restore_pos_and_move_p1
+  if p1_room_number = mi_room_number && player1y <> offscrn_y then goto _restore_pos_and_move_p1
   ; if the missiles are not in the room with the player
   ; but the player is visible then hide it
-  if p1_room <> room_number && player1y <> offscrn_y then goto _save_and_hide_p1
+  if p1_room_number <> mi_room_number && player1y <> offscrn_y then goto _save_and_hide_p1
   ; if the missiles are not in the room with the player
   ; and the player is already offscreen don't do anything
-  if p1_room <> room_number && player1y = offscrn_y then goto _end_p1_logic
+  if p1_room_number <> mi_room_number && player1y = offscrn_y then goto _end_p1_logic
 
 _save_and_hide_p1  
   p1_y = player1y
@@ -352,12 +346,14 @@ _save_and_hide_p1
   p1_move_counter = 0
   goto _end_p1_logic
 _restore_pos_and_move_p1
-  if p1_room = room_number && player1y = offscrn_y then player1y = p1_y
+  if p1_room_number = mi_room_number && player1y = offscrn_y then player1y = p1_y
 _calc_pos_and_move_p1
   ; calculate midpoint between m0 and m1
 
   dim mid_delta = temp3
   dim mid_delta_half = temp4
+  dim mx_mid = temp5
+  dim my_mid = temp6
 
   ; calculate horizontal midpoint
   if missile0x > missile1x then goto _m0_x_right_of_m1_x
@@ -401,6 +397,12 @@ _end_set_p1_dx
   if player1y = my_mid then p1_dy = 0 : goto _end_set_p1_dy
   if player1y < my_mid then p1_dy = 1 else p1_dy = -1
 _end_set_p1_dy
+
+
+  dim coll_detect_top = temp3
+  dim coll_detect_bottom = temp4
+  dim coll_detect_right = temp5
+  dim coll_detect_left = temp6
 
 _begin_p1_up
   if p1_dy <> -1 then goto _end_p1_up
@@ -449,9 +451,9 @@ _end_p1_logic
 
 
 _room_right
-  if room_number = room_middle then missile0x = entry_gate_left_x : missile1x = entry_gate_left_x
+  if mi_room_number = room_middle then missile0x = entry_gate_left_x : missile1x = entry_gate_left_x
 _inititial_game_room
-  room_number = room_right
+  mi_room_number = room_right
   COLUBK = BLACK
   COLUPF = WHITE
   playfield:
@@ -477,11 +479,11 @@ _skip_room_right_boundary_check
 _room_middle
   ; depending on which room we came from
   ; set the correct horizonal or vertical starting position
-  if room_number = room_right then missile0x = entry_gate_right_x : missile1x = entry_gate_right_x
-  if room_number = room_left then missile0x = entry_gate_left_x : missile1x = entry_gate_left_x
-  if room_number = room_top then missile0y = entry_gate_top_y : missile1y = entry_gate_top_y
-  if room_number = room_bottom then missile0y = entry_gate_bot_y : missile1y = entry_gate_bot_y
-  room_number = room_middle
+  if mi_room_number = room_right then missile0x = entry_gate_right_x : missile1x = entry_gate_right_x
+  if mi_room_number = room_left then missile0x = entry_gate_left_x : missile1x = entry_gate_left_x
+  if mi_room_number = room_top then missile0y = entry_gate_top_y : missile1y = entry_gate_top_y
+  if mi_room_number = room_bottom then missile0y = entry_gate_bot_y : missile1y = entry_gate_bot_y
+  mi_room_number = room_middle
   COLUBK = ORANGE_DARK
   COLUPF = ORANGE_LIGHT
   playfield:
@@ -508,8 +510,8 @@ _room_middle_boundary_check
 _skip_room_middle_boundary_check
 
 _room_left
-  if room_number = room_middle then missile0x = entry_gate_right_x : missile1x = entry_gate_right_x
-  room_number = room_left
+  if mi_room_number = room_middle then missile0x = entry_gate_right_x : missile1x = entry_gate_right_x
+  mi_room_number = room_left
   COLUBK = GRAY_DARK
   COLUPF = GRAY_LIGHT
   playfield:
@@ -533,8 +535,8 @@ _room_left_boundary_check
 _skip_room_left_boundary_check
 
 _room_top
-  if room_number = room_middle then missile0y = entry_gate_bot_y : missile1y = entry_gate_bot_y
-  room_number = room_top
+  if mi_room_number = room_middle then missile0y = entry_gate_bot_y : missile1y = entry_gate_bot_y
+  mi_room_number = room_top
   COLUBK = GREEN_DARK
   COLUPF = GREEN_LIGHT
   playfield:
@@ -558,8 +560,8 @@ _room_top_boundary_check
 _skip_room_top_boundary_check
 
 _room_bottom
-  if room_number = room_middle then missile0y = entry_gate_top_y : missile1y = entry_gate_top_y
-  room_number = room_bottom
+  if mi_room_number = room_middle then missile0y = entry_gate_top_y : missile1y = entry_gate_top_y
+  mi_room_number = room_bottom
   COLUBK = PURPLE_DARK
   COLUPF = PURPLE_LIGHT
   playfield:
