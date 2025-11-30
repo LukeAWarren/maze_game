@@ -27,10 +27,10 @@
   const player1_half_height = 2
   const p1_gate_threshold = 2
 
-
   ; alais registers
   dim coll_detect_x = b
   dim coll_detect_y = c
+
   ; input debouncing for joystick 0
   dim j0_debounce_up_down = d
   dim j0_debounce_left_right = e
@@ -38,16 +38,22 @@
   ; input debouncing for joystick 1
   dim j1_debounce_up_down = f
   dim j1_debounce_left_right = g
+
+  ; current room the missiles are in
   dim room_number = h
 
+  ; a bunch of registeres for dealing with the p1 object
   dim mx_mid = i
   dim my_mid = j
-
   dim p1_room = k
   dim p1_x = l
   dim p1_y = m
-  dim p1_move_counter = n
-  
+  dim p1_x_next = n
+  dim p1_y_next = o
+  dim p1_dx = p
+  dim p1_dy = q
+  dim p1_move_counter = r
+
   ; initialize the first room
   room_number = 0
 
@@ -96,12 +102,6 @@
   const m1_y_top_edge_minus1 = pf_scr_y_offset + 1 ; = 4
   const m1_y_bottom_edge_minus1 = pf_scr_y_offset - missle1_height + 1  ; = 0
   const m1_y_bottom_edge_minus2 = pf_scr_y_offset - missle1_height + 2  ; = 1
-  ;const p1_x_left_edge = pf_scr_x_offset - 1
-  ;const p1_x_right_edge = pf_scr_x_offset - player1_width - 2
-  ;const p1_x_right_edge_plus1 = p1_x_right_edge - 1
-  ;const p1_y_top_edge = pf_scr_y_offset + 2
-  ;const p1_y_bottom_edge = pf_scr_y_offset - player1_height - 1
-  ;const p1_y_bottom_edge_minus1 = p1_y_bottom_edge + 1
 
   ; missle 0 setup
   COLUP0 = BLUE
@@ -115,22 +115,11 @@
   missile1x = 100
   missile1y = 40
 
-
-
   ; frames to wait before auto-repeat
   const j_debounce_delay = 4
 
-  ; frames between player1 steps toward midpoint
+  ; elapsed frames between player1 movements towards the midpoint
   const p1_move_delay = 3
-
-  ; dim p1_gate_coord = p
-  ; dim p1_dest_coord = q
-  ; dim p1_target_room = r
-  ; dim p1_align_midpoint = s
-  ; dim p1_dx = t
-  ; dim p1_dy = u
-
-  p1_room = 1
   p1_move_counter = 0
 
   player1:
@@ -139,11 +128,15 @@
     %11110000
     %01100000
 end
-  p1_x = 50
-  p1_y = 15
+  p1_x = 59
+  p1_y = 55
+  p1_x_next = p1_x
+  p1_y_next = p1_y
   player1x = p1_x
   player1y = p1_y
-  ; p1_y = player1y
+
+  ; p1 starts in room 1
+  p1_room = 1
 
 mainloop
   NUSIZ0 = missle0_width_bin ; four pixels wide
@@ -374,7 +367,7 @@ _calc_pos_and_move_p1
   dim mid_delta = temp3
   dim mid_delta_half = temp4
 
-  ; calculate horizontal midpoint  
+  ; calculate horizontal midpoint
   if missile0x > missile1x then goto _m0_x_right_of_m1_x
     mid_delta = missile1x - missile0x
     mid_delta_half = mid_delta / 2
@@ -392,7 +385,7 @@ _end_m0_m1_horizontal_midpoint
   if missile0y > missile1y then goto _m0_y_right_of_m1_y
     mid_delta = missile1y - missile0y
     mid_delta_half = mid_delta / 2
-    my_mid = missile1y - mid_delta_half    
+    my_mid = missile1y - mid_delta_half
     goto _end_m0_m1_vertical_midpoint
 _m0_y_right_of_m1_y
   mid_delta = missile0y - missile1y
@@ -405,139 +398,96 @@ _end_m0_m1_vertical_midpoint
   if p1_move_counter <= p1_move_delay then goto _sync_p1_position
   p1_move_counter = 0
 
-  dim p1_x_next = temp3
-  dim p1_y_next = temp4
+  ; determine which direction p1 should move
 
-_calc_p1_x_next
-  if p1_x = mx_mid then p1_x_next = p1_x : goto _end_calc_p1_x_next
-  if p1_x < mx_mid then goto _calc_p1_x_next_right
-    p1_x_next = p1_x - 1    
-    goto _end_calc_p1_x_next
-_calc_p1_x_next_right
-  p1_x_next = p1_x + 1
-_end_calc_p1_x_next
+  if p1_x = mx_mid then p1_dx = 0 : goto _end_set_p1_dx
+  if p1_x < mx_mid then p1_dx = 1 else p1_dx = -1
+_end_set_p1_dx
 
-_calc_p1_y_next
-  if p1_y = my_mid then p1_y_next = p1_y : goto _end_calc_p1_y_next
-  if p1_y < my_mid then goto _calc_p1_y_next_down
-    p1_y_next = p1_y - 1    
-    goto _end_calc_p1_y_next
-_calc_p1_y_next_down
-  p1_y_next = p1_y + 1
-_end_calc_p1_y_next
+  if p1_y = my_mid then p1_dy = 0 : goto _end_set_p1_dy
+  if p1_y < my_mid then p1_dy = 1 else p1_dy = -1
+_end_set_p1_dy
 
-  ; perform collision detection to determine if we can move p1
+  
+  ; ensure p1 can move in the required direction
+  ; but avoid playfield walls
+
+_p1_up
+  if p1_dy <> -1 then _skip_p1_up
+
+    ; calculate top y pos
+    coll_detect_y = ((p1_y - 5) / 8)
+
+    ; get the left x pos
+    coll_detect_x = ((p1_x - 17) / 4)
+    if pfread(coll_detect_x, coll_detect_y) then goto _skip_p1_up
+
+    ; get the right x pos
+    coll_detect_x = ((p1_x - 14) / 4)
+    if pfread(coll_detect_x, coll_detect_y) then goto _skip_p1_up
+
+    p1_y_next = p1_y - 1
+
+_skip_p1_up
+
+_p1_down
+  if p1_dy <> 1 then _skip_p1_down
+
+    ; calculate bottom y pos
+    coll_detect_y = (p1_y / 8)
+
+    ; get the right x pos
+    coll_detect_x = ((p1_x - 14) / 4)
+    if pfread(coll_detect_x, coll_detect_y) then goto _skip_p1_down
+
+    ; get the left x pos
+    coll_detect_x = ((p1_x - 17) / 4)
+    if pfread(coll_detect_x, coll_detect_y) then goto _skip_p1_down
+
+    p1_y_next = p1_y + 1
+
+_skip_p1_down
+
+_p1_left
+  ; if p1_dx = -1 then we're moving ot the left
+  if p1_dx <> -1 then _skip_p1_left
+
+    ; get the left x
+    coll_detect_x = ((p1_x - 18) / 4)
+
+    ; get the top y
+    coll_detect_y = (p1_y / 8)
+    if pfread(coll_detect_x, coll_detect_y) then goto _skip_p1_left
+
+    ; get the bottom y
+    coll_detect_y = ((p1_y - 5) / 8)
+    if pfread(coll_detect_x, coll_detect_y) then goto _skip_p1_left
+
+    p1_x_next = p1_x - 1
+
+_skip_p1_left
+
+_p1_right
+  if p1_dx <> 1 then _skip_p1_right
+
+    ; get the right x
+    coll_detect_x = ((p1_x - 13) / 4)
+
+    ; get the top y
+    coll_detect_y = ((p1_y - 5) / 8)
+    if pfread(coll_detect_x,coll_detect_y) then goto _skip_p1_right
+
+    ; get the bottom y
+    coll_detect_y = (p1_y / 8)
+    if pfread(coll_detect_x,coll_detect_y) then goto _skip_p1_right
+
+    p1_x_next = p1_x + 1
+
+_skip_p1_right
+
   p1_x = p1_x_next
   p1_y = p1_y_next
 
-  goto _sync_p1_position
-
-;  if player1x = (mx_mid - 1) then goto _p1_x_move_end
-;  if player1x < (mx_mid - 1) then goto _p1_move_left else goto _p1_move_right
-;_p1_move_left
-;  player1x = player1x - 1
-;  goto _p1_x_move_end
-;_p1_move_right
-;  player1x = player1x + 1
-;  goto _p1_x_move_end
-
-; _p1_x_move_end
-
-  ;if missile0x > missile1x then p1_target_x = (missile0x - missile1x) / 2
-  ; calculate midpoint Y
-  ;if missile0y <= missile1y then p1_target_y = (missile1y - missile0y) / 2
-  ;if missile0y > missile1y then p1_target_y = (missile0y - missile1y) / 2
-
-  ; decide desired step toward midpoint
-  ; initialize these to 0 in case p1 doesn't need to move
-  ;p1_dx = 0 : p1_dy = 0
-  ;if player1x < p1_target_x then p1_dx = 1
-  ;if player1x > p1_target_x then p1_dx = -1
-  ;if player1y < p1_target_y then p1_dy = 1
-  ;if player1y > p1_target_y then p1_dy = -1
-  ;if player1x < p1_target_x then player1x = player1x - 1
-  ;if player1x > p1_target_x then player1x = player1x + 1
-  ;if player1y < p1_target_y then player1y = player1y - 1
-  ;if player1y > p1_target_y then player1y = player1y + 1
-
-  ; try horizontal move first (allows vertical sliding when blocked)
-;  if p1_dx then goto _p1_try_horizontal_move
-;  goto _p1_skip_horizontal_move
-;_p1_try_horizontal_move
-;  if p1_dx = -1 then coll_detect_x = ((player1x - p1_x_left_edge) / 4)
-;  if p1_dx = 1 then coll_detect_x = ((player1x - p1_x_right_edge_plus1) / 4)
-;  coll_detect_y = ((player1y - p1_y_top_edge) / 8)
-;  if pfread(coll_detect_x, coll_detect_y) then goto _p1_horizontal_blocked
-;  coll_detect_y = ((player1y - p1_y_bottom_edge_minus1) / 8)
-;  if pfread(coll_detect_x, coll_detect_y) then goto _p1_horizontal_blocked
-;  player1x = player1x + p1_dx
-;  goto _p1_skip_horizontal_move
-;_p1_horizontal_blocked
-;  ; if we also want to move vertically, slide in that direction first
-;  if p1_dy = 0 then goto _p1_skip_horizontal_move
-;  if p1_dy = 1 then goto _p1_horizontal_blocked_try_down
-;  ; p1_dy = -1 -> try up first
-;  coll_detect_y = ((player1y - p1_y_top_edge) / 8)
-;  coll_detect_x = ((player1x - p1_x_left_edge) / 4)
-;  if pfread(coll_detect_x, coll_detect_y) then goto _p1_horizontal_blocked_try_down
-;  coll_detect_x = ((player1x - p1_x_right_edge) / 4)
-;  if pfread(coll_detect_x, coll_detect_y) then goto _p1_horizontal_blocked_try_down
-;  player1y = player1y - 1
-;  goto _p1_skip_horizontal_move
-;_p1_horizontal_blocked_try_down
-;  coll_detect_y = ((player1y - p1_y_bottom_edge_minus1) / 8)
-;  coll_detect_x = ((player1x - p1_x_left_edge) / 4)
-;  if pfread(coll_detect_x, coll_detect_y) then goto _p1_skip_horizontal_move
-;  coll_detect_x = ((player1x - p1_x_right_edge) / 4)
-;  if pfread(coll_detect_x, coll_detect_y) then goto _p1_skip_horizontal_move
-;  player1y = player1y + 1
-;_p1_skip_horizontal_move
-;
-;  ; then try vertical move (allows horizontal sliding when blocked)
-;  if p1_dy then goto _p1_try_vertical_move
-;  goto _end_p1_logic
-;_p1_try_vertical_move
-;  if p1_dy = -1 then coll_detect_y = ((player1y - p1_y_top_edge) / 8)
-;  if p1_dy = 1 then coll_detect_y = ((player1y - p1_y_bottom_edge_minus1) / 8)
-;  if p1_dx = -1 then goto _p1_vertical_check_right_only
-;  if p1_dx = 1 then goto _p1_vertical_check_left_only
-;  coll_detect_x = ((player1x - p1_x_left_edge) / 4)
-;  if pfread(coll_detect_x, coll_detect_y) then goto _p1_vertical_blocked
-;  coll_detect_x = ((player1x - p1_x_right_edge) / 4)
-;  if pfread(coll_detect_x, coll_detect_y) then goto _p1_vertical_blocked
-;  player1y = player1y + p1_dy
-;  goto _end_p1_logic
-;_p1_vertical_check_left_only
-;  coll_detect_x = ((player1x - p1_x_left_edge) / 4)
-;  if pfread(coll_detect_x, coll_detect_y) then goto _p1_vertical_blocked
-;  player1y = player1y + p1_dy
-;  goto _end_p1_logic
-;_p1_vertical_check_right_only
-;  coll_detect_x = ((player1x - p1_x_right_edge) / 4)
-;  if pfread(coll_detect_x, coll_detect_y) then goto _p1_vertical_blocked
-;  player1y = player1y + p1_dy
-;  goto _end_p1_logic
-;_p1_vertical_blocked
-;  ; try sliding in the desired horizontal direction first, then opposite
-;  if p1_dx = 1 then goto _p1_vertical_blocked_try_right
-;  if p1_dx = -1 then goto _p1_vertical_blocked_try_left
-;  ; no horizontal intent, try right then left
-;_p1_vertical_blocked_try_right
-;  coll_detect_x = ((player1x - p1_x_right_edge_plus1) / 4)
-;  coll_detect_y = ((player1y - p1_y_top_edge) / 8)
-;  if pfread(coll_detect_x, coll_detect_y) then goto _p1_vertical_blocked_try_left
-;  coll_detect_y = ((player1y - p1_y_bottom_edge_minus1) / 8)
-;  if pfread(coll_detect_x, coll_detect_y) then goto _p1_vertical_blocked_try_left
-;  player1x = player1x + 1
-;  goto _end_p1_logic
-;_p1_vertical_blocked_try_left
-;  coll_detect_x = ((player1x - p1_x_left_edge) / 4)
-;  coll_detect_y = ((player1y - p1_y_top_edge) / 8)
-;  if pfread(coll_detect_x, coll_detect_y) then goto _end_p1_logic
-;  coll_detect_y = ((player1y - p1_y_bottom_edge_minus1) / 8)
-;  if pfread(coll_detect_x, coll_detect_y) then goto _end_p1_logic
-;  player1x = player1x - 1
-;  goto _end_p1_logic
 _show_p1
   ; restore saved position
   p1_move_counter = 0
@@ -549,50 +499,6 @@ _end_p1_logic
   drawscreen
   goto mainloop
 
-; _p1_place_at_midpoint
-;   if p1_room <> room_number then return
-;   if player1y = offscrn_y then return
-;
-;   if missile0x <= missile1x then p1_target_x = missile0x : p1_mid_delta = missile1x - missile0x
-;   if missile0x > missile1x then p1_target_x = missile1x : p1_mid_delta = missile0x - missile1x
-;   p1_mid_delta = p1_mid_delta / 2
-;   player1x = p1_target_x + p1_mid_delta - player1_half_width
-;
-;   if missile0y <= missile1y then p1_target_y = missile0y : p1_mid_delta = missile1y - missile0y
-;   if missile0y > missile1y then p1_target_y = missile1y : p1_mid_delta = missile0y - missile1y
-;   p1_mid_delta = p1_mid_delta / 2
-;   player1y = p1_target_y + p1_mid_delta
-;
-;   p1_align_midpoint = 0
-;   return
-;
-; _p1_try_follow_horizontal
-;   if p1_room <> room_number then return
-;   if player1y = offscrn_y then return
-;   if player1y < entry_gate_top_y then return
-;   if player1y > entry_gate_bot_y then return
-;   p1_mid_delta = player1x + player1_half_width
-;   if p1_mid_delta < p1_gate_coord - p1_gate_threshold then return
-;   if p1_mid_delta > p1_gate_coord + p1_gate_threshold then return
-;   p1_room = p1_target_room
-;   player1x = p1_dest_coord
-;   p1_move_counter = 0
-;   p1_align_midpoint = 1
-;   return
-;
-; _p1_try_follow_vertical
-;   if p1_room <> room_number then return
-;   if player1y = offscrn_y then return
-;   if player1x < entry_gate_left_x then return
-;   if player1x > entry_gate_right_x then return
-;   p1_mid_delta = player1y + player1_half_height
-;   if p1_mid_delta < p1_gate_coord - p1_gate_threshold then return
-;   if p1_mid_delta > p1_gate_coord + p1_gate_threshold then return
-;   p1_room = p1_target_room
-;   player1y = p1_dest_coord
-;   p1_move_counter = 0
-;   p1_align_midpoint = 1
-;   return
 
 _room_right
   if room_number = room_middle then missile0x = entry_gate_left_x : missile1x = entry_gate_left_x
