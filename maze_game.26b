@@ -22,28 +22,24 @@
   const PINK = $4A
   const BLUE = $84
 
-  ; alais registers
-  dim coll_detect_x = b
-  dim coll_detect_y = c
-
   ; input debouncing for joystick 0
-  dim j0_debounce_up_down = d
-  dim j0_debounce_left_right = e
+  dim j0_debounce_up_down = a
+  dim j0_debounce_left_right = b
 
   ; input debouncing for joystick 1
-  dim j1_debounce_up_down = f
-  dim j1_debounce_left_right = g
+  dim j1_debounce_up_down = c
+  dim j1_debounce_left_right = d
 
   ; current room the missiles are in
-  dim mi_room_number = h
+  dim mi_room_number = e
 
   ; a bunch of registeres for dealing with the p1 object
-  dim p1_room_number = i
+  dim p1_room_number = f
 
-  dim p1_y = j
-  dim p1_dx = k
-  dim p1_dy = l
-  dim p1_move_counter = m
+  dim p1_y = g
+  dim p1_dx = h
+  dim p1_dy = i
+  dim p1_move_counter = j
 
   ; initialize the first room
   mi_room_number = 0
@@ -67,11 +63,10 @@
   const entry_gate_bot_y = 79
 
   ; missile dimensions (defined first, used in collision constants)
+  const MISSLE_WIDTH = 4
   const missle0_height = 4
-  const missle0_width = 4
   const missle0_width_bin = %00100000
   const missle1_height = 4
-  const missle1_width = 4
   const missle1_width_bin = %00100000
 
   ; horizontal offset
@@ -79,7 +74,7 @@
 
   ; optimized X collision constants (same for both missiles)
   const m_x_left_edge = pf_scr_x_offset + 1          ; = 19
-  const m_x_right_edge = pf_scr_x_offset - missle0_width + 1  ; = 15
+  const m_x_right_edge = pf_scr_x_offset - MISSLE_WIDTH + 1  ; = 15
   const m_x_right_edge_plus1 = m_x_right_edge - 1    ; = 14
 
   ; vertical offset
@@ -131,6 +126,10 @@ end
 mainloop
   NUSIZ0 = missle0_width_bin ; four pixels wide
   NUSIZ1 = missle1_width_bin ; four pixels wide
+
+  ; use these two temps vars for all the missile playfield collision detection
+  dim coll_detect_x = temp3
+  dim coll_detect_y = temp4
 
   if !joy0up && !joy0down then j0_debounce_up_down = 0
 
@@ -326,7 +325,6 @@ _end_boundary_check
 
 
 _begin_p1_logic
-
 
   ; if p1 is in the room but is off the screen, then restore its last y position
   if p1_room_number = mi_room_number && player1y = offscrn_y then goto _restore_pos_and_move_p1
