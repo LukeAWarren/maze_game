@@ -41,6 +41,13 @@
   dim p1_dy = i
   dim p1_move_counter = j
 
+  ; registers for the p0 objective sprite
+  dim p0_room_number = k
+  dim p0_y = o
+  dim game_over = l
+  dim color_cycle = m
+  dim color_cycle_timer = n
+
   ; initialize the first room
   mi_room_number = 0
 
@@ -90,14 +97,14 @@
   ; missle 0 setup
   COLUP0 = BLUE
   missile0height = MISSLE_HEIGHT - 1
-  missile0x = 60
-  missile0y = 52
+  missile0x = 100
+  missile0y = 20
 
   ; missle 1 setup
   COLUP1 = PINK
   missile1height = MISSLE_HEIGHT - 1
   missile1x = 100
-  missile1y = 52
+  missile1y = 75
 
   ; frames to wait before auto-repeat
   const J_DEBOUNCE_DELAY = 4
@@ -106,6 +113,7 @@
   ; elapsed frames between player1 movements towards the midpoint
   const P1_MOVE_DELAY = 3
   const P1_GATE_THRESHOLD = 2 ; how close the p1 sprite is to the gate to pass through
+  const COLOR_CYCLE_DELAY = 12
 
   p1_move_counter = 0
 
@@ -115,15 +123,32 @@
     %10010000
     %11110000
 end
-  player1x = 94
-  player1y = 52
+  player1x = 100
+  player1y = 45
 
   ; p1 starts in room 1
   p1_room_number = 1
 
+  player0:
+    %10010000
+    %01100000
+    %01100000
+    %10010000
+end
+  player0x = 50
+  player0y = 45
+  p0_y = player0y
+
+  ; p0 starts in room 1
+  p0_room_number = 2
+  game_over = 0
+  color_cycle = 0
+  color_cycle_timer = 0
+
 mainloop
   NUSIZ0 = MISSLE_WIDTH_BIN ; four pixels wide
   NUSIZ1 = MISSLE_WIDTH_BIN ; four pixels wide
+  if game_over then goto _game_over
 
   ; use these two temps vars for all the missile playfield collision detection
   dim coll_detect_x = temp3
@@ -321,6 +346,18 @@ _begin_boundary_check
 
 _end_boundary_check
 
+_begin_p0_logic
+  if p0_room_number = mi_room_number && player0y = OFFSCRN_Y then goto _restore_pos_p0
+  if p0_room_number <> mi_room_number && player0y <> OFFSCRN_Y then goto _save_and_hide_p0
+  goto _end_p0_logic
+
+_save_and_hide_p0
+  p0_y = player0y
+  player0y = OFFSCRN_Y
+  goto _end_p0_logic
+_restore_pos_p0
+  player0y = p0_y
+_end_p0_logic
 
 _begin_p1_logic
 
@@ -443,6 +480,29 @@ _end_p1_left
 
 _end_p1_logic
 
+  if p0_room_number = p1_room_number && player1x = player0x && player1y = player0y then goto _start_game_over
+
+  drawscreen
+  goto mainloop
+
+_start_game_over
+  game_over = 1
+  color_cycle = 0
+  color_cycle_timer = 0
+  goto _game_over
+
+_game_over
+  if color_cycle_timer < COLOR_CYCLE_DELAY then color_cycle_timer = color_cycle_timer + 1 : goto _game_over_colors
+  color_cycle_timer = 0
+  color_cycle = color_cycle + 1
+  if color_cycle > 4 then color_cycle = 0
+
+_game_over_colors
+  if color_cycle = 0 then COLUBK = BLACK : COLUPF = WHITE
+  if color_cycle = 1 then COLUBK = GRAY_DARK : COLUPF = GRAY_LIGHT
+  if color_cycle = 2 then COLUBK = GREEN_DARK : COLUPF = GREEN_LIGHT
+  if color_cycle = 3 then COLUBK = ORANGE_DARK : COLUPF = ORANGE_LIGHT
+  if color_cycle = 4 then COLUBK = PURPLE_DARK : COLUPF = PURPLE_LIGHT
   drawscreen
   goto mainloop
 
@@ -458,11 +518,11 @@ _inititial_game_room
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
     X..............................X
     X..............................X
-    X..............................X
-    ..............XXXX.............X
-    ..............XXXX.............X
-    X..............................X
-    X..............................X
+    ...............................X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    ...............................X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    ...............................X
     X..............................X
     X..............................X
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -489,14 +549,14 @@ _room_middle
   COLUBK = ORANGE_DARK
   COLUPF = ORANGE_LIGHT
   playfield:
-    XXXXXXXXXXXXXX....XXXXXXXXXXXXXX
-    X..............................X
-    X..............................X
-    X..............................X
-    ................................
-    ................................
-    X..............................X
-    X..............................X
+    XXXXXXXXXXXXXX..X..X..XXXXXXXXXX
+    X...............X..X...........X
+    X...............X..XXXXXXXXX...X
+    X...............X..........X....
+    ................X..........XXXXX
+    ................X...............
+    X...............XXXXXXXXXXXXXXXX
+    X...............................
     X..............................X
     X..............................X
     XXXXXXXXXXXXXX....XXXXXXXXXXXXXX
@@ -554,7 +614,7 @@ _room_top
     X..............................X
     X..............................X
     X..............................X
-    XXXXXXXXXXXXXX....XXXXXXXXXXXXXX
+    XXXXXXXXXXXXXX..X..X..XXXXXXXXXX
     ................................
 end
   goto _end_boundary_check
