@@ -47,6 +47,7 @@
   dim game_over = l
   dim color_cycle = m
   dim color_cycle_timer = n
+  dim game_state = p
 
   ; initialize the first room
   mi_room_number = 0
@@ -56,6 +57,8 @@
   const ROOM_LEFT = 3
   const ROOM_TOP = 4
   const ROOM_BOTTOM = 5
+  const STATE_TITLE = 0
+  const STATE_PLAY = 1
 
   ; missle screen offset
   const SCR_LEFT_X = 18
@@ -63,6 +66,10 @@
   const SCR_TOP_Y = 4
   const SCR_BOT_Y = 87
   const OFFSCRN_Y = 200
+  const START_M0_X = 100
+  const START_M0_Y = 20
+  const START_M1_X = 100
+  const START_M1_Y = 75
 
   const ENTRY_GATE_LEFT_X = 22
   const ENTRY_GATE_RIGHT_X = 138
@@ -97,14 +104,14 @@
   ; missle 0 setup
   COLUP0 = BLUE
   missile0height = MISSLE_HEIGHT - 1
-  missile0x = 100
-  missile0y = 20
+  missile0x = START_M0_X
+  missile0y = START_M0_Y
 
   ; missle 1 setup
   COLUP1 = PINK
   missile1height = MISSLE_HEIGHT - 1
-  missile1x = 100
-  missile1y = 75
+  missile1x = START_M1_X
+  missile1y = START_M1_Y
 
   ; frames to wait before auto-repeat
   const J_DEBOUNCE_DELAY = 4
@@ -127,7 +134,7 @@ end
   player1y = 45
 
   ; p1 starts in room 1
-  p1_room_number = 1
+  p1_room_number = 2
 
   player0:
     %10010000
@@ -144,8 +151,13 @@ end
   game_over = 0
   color_cycle = 0
   color_cycle_timer = 0
+  game_state = STATE_TITLE
+  missile0y = OFFSCRN_Y
+  missile1y = OFFSCRN_Y
+  goto _title_screen
 
 mainloop
+  if game_state = STATE_TITLE then goto _title_loop
   NUSIZ0 = MISSLE_WIDTH_BIN ; four pixels wide
   NUSIZ1 = MISSLE_WIDTH_BIN ; four pixels wide
   if game_over then goto _game_over
@@ -506,6 +518,43 @@ _game_over_colors
   drawscreen
   goto mainloop
 
+_title_loop
+  if joy0fire || joy1fire then goto _start_game
+  drawscreen
+  goto mainloop
+
+_start_game
+  game_state = STATE_PLAY
+  game_over = 0
+  color_cycle = 0
+  color_cycle_timer = 0
+  p1_room_number = ROOM_RIGHT
+  p0_room_number = ROOM_RIGHT
+  missile0x = START_M0_X
+  missile0y = START_M0_Y
+  missile1x = START_M1_X
+  missile1y = START_M1_Y
+  goto _inititial_game_room
+
+
+_title_screen
+  mi_room_number = 0
+  COLUBK = BLACK
+  COLUPF = WHITE
+  playfield:
+    XXXXXX.XX.XX.XXX.XXXX.XXX.XXXXXX
+    .......X.X.X.X.X....X.X.........
+    XXXXXX.X.X.X.XXX...X..XX..XXXXXX
+    .......X...X.X.X..X...X.........
+    XXXXXX.X...X.X.X.XXXX.XXX.XXXXXX
+    ................................
+    XXXXXX.XXXX.XXX.XX.XX.XXX.XXXXXX
+    .......X....X.X.X.X.X.X.........
+    XXXXXX.X.XX.XXX.X.X.X.XX..XXXXXX
+    .......X..X.X.X.X...X.X.........
+    XXXXXX.XXXX.X.X.X...X.XXX.XXXXXX
+end
+  goto mainloop
 
 _room_right
   if mi_room_number = ROOM_MIDDLE then missile0x = ENTRY_GATE_LEFT_X : missile1x = ENTRY_GATE_LEFT_X
