@@ -2,3 +2,13 @@
 /.claude
 /.vscode
 /bin
+/bB.asm
+/2600basic_variable_redefs.h
+/includes.bB
+/*.26b.asm
+/*.26b.bin
+/*.26b.lst
+/*.26b.sym
+/.cache/bB.asm
+/.cache/2600basic_variable_redefs.h
+/.cache/includes.bB
