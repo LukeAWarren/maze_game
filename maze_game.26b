@@ -64,6 +64,7 @@
   dim title_bass_duration = q
   dim title_melody_duration = r
   dim title_music_setup_mode = s
+  dim title_melody_phrase = t
 
   ; initialize the first room
   mi_room_number = 0
@@ -589,6 +590,7 @@ _title_screen
     XXXXXX.XXXX.X.X.X...X.XXX.XXXXXX
 end
  title_music_setup_mode = TITLE_MUSIC_SETUP_INIT
+ title_melody_phrase = 0
  goto _title_bass_setup
 
 _title_music_loop
@@ -611,13 +613,21 @@ _after_title_bass
 
 _read_title_melody_event
   temp4 = sread(_Title_Melody)
-  if temp4 = 255 then title_music_setup_mode = TITLE_MUSIC_SETUP_MELODY : goto _title_melody_setup
+  if temp4 = 255 then goto _next_title_melody_phrase
   temp5 = sread(_Title_Melody)
   temp6 = sread(_Title_Melody)
   AUDV0 = temp4
   AUDC0 = temp5
   AUDF0 = temp6
   title_melody_duration = sread(_Title_Melody)
+  goto _after_title_melody
+
+_next_title_melody_phrase
+  title_melody_phrase = title_melody_phrase + 1
+  if title_melody_phrase > 7 then title_melody_phrase = 0
+  title_music_setup_mode = TITLE_MUSIC_SETUP_MELODY
+  if title_melody_phrase > 3 then goto _title_melody_2_setup
+  goto _title_melody_setup
 
 _after_title_melody
   goto _after_title_music
@@ -721,6 +731,27 @@ _title_melody_setup
 end
   title_melody_duration = 1
   if title_music_setup_mode = TITLE_MUSIC_SETUP_INIT then goto mainloop
+  goto _read_title_melody_event
+
+_title_melody_2_setup
+  sdata _Title_Melody_2 = w
+  8,4,19
+  16
+  8,4,20
+  16
+  8,4,19
+  16
+  8,4,17
+  16
+  8,4,15
+  16
+  8,4,23
+  16
+  8,4,26
+  32
+  255
+end
+  title_melody_duration = 1
   goto _read_title_melody_event
 
 _room_right_boundary_check

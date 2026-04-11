@@ -53,9 +53,9 @@ All 26 registers (a–z) are assigned. Do not use a register without first check
 | q | title_bass_duration | title music bass duration counter |
 | r | title_melody_duration | title music melody duration counter |
 | s | title_music_setup_mode | title music setup return mode |
-| t | (free) | not yet assigned |
+| t | title_melody_phrase | current title melody phrase index (0–7) |
 | u/v | _Title_Bass sdata pointer | title music bass stream pointer |
-| w/x | _Title_Melody sdata pointer | title music melody stream pointer |
+| w/x | _Title_Melody/_Title_Melody_2 sdata pointer | title music melody stream pointer |
 | y/z | (free) | not yet assigned |
 
 Temp variables `temp1`–`temp6` are used within single logical blocks and reset after `drawscreen`. They are re-aliased at point of use (e.g. `dim mid_delta = temp3`).
@@ -99,7 +99,10 @@ J_DEBOUNCE_DELAY = 4
 - Title screen plays two-voice music:
   - `_Title_Bass` on channel 1 (`AUDV1`/`AUDC1`/`AUDF1`)
   - `_Title_Melody` on channel 0 (`AUDV0`/`AUDC0`/`AUDF0`)
-  - Bass loop is 512 frames; melody loop is 128 frames, so they stay in a 4:1 sync ratio
+  - `_Title_Melody_2` is the second melody section, also on channel 0
+  - Bass phrase is 512 frames
+  - Each melody phrase is 128 frames
+  - Melody section 1 plays 4 times, then melody section 2 plays 4 times, then the title song restarts
 
 ## Collision Detection — Two Separate Systems
 
