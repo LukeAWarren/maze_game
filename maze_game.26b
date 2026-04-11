@@ -61,6 +61,9 @@
   dim color_cycle = m
   dim color_cycle_timer = n
   dim game_state = p
+  dim title_bass_duration = q
+  dim title_melody_duration = r
+  dim title_music_setup_mode = s
 
   ; initialize the first room
   mi_room_number = 0
@@ -76,6 +79,9 @@
   const ROOM_BOTTOM_RIGHT = 9
   const STATE_TITLE = 0
   const STATE_PLAY = 1
+  const TITLE_MUSIC_SETUP_INIT = 0
+  const TITLE_MUSIC_SETUP_MELODY = 1
+  const TITLE_MUSIC_SETUP_BASS = 2
 
   ; missle screen offset
   const SCR_LEFT_X = 18
@@ -545,10 +551,13 @@ _game_over_colors
 
 _title_loop
   if joy0fire || joy1fire then goto _start_game
+  goto _title_music_loop
+_after_title_music
   drawscreen
   goto mainloop
 
 _start_game
+  AUDV0 = 0 : AUDV1 = 0
   game_state = STATE_PLAY
   game_over = 0
   color_cycle = 0
@@ -579,7 +588,140 @@ _title_screen
     .......X..X.X.X.X...X.X.........
     XXXXXX.XXXX.X.X.X...X.XXX.XXXXXX
 end
- goto mainloop
+ title_music_setup_mode = TITLE_MUSIC_SETUP_INIT
+ goto _title_bass_setup
+
+_title_music_loop
+  title_bass_duration = title_bass_duration - 1
+  if title_bass_duration then goto _after_title_bass
+
+_read_title_bass_event
+  temp4 = sread(_Title_Bass)
+  if temp4 = 255 then title_music_setup_mode = TITLE_MUSIC_SETUP_BASS : goto _title_bass_setup
+  temp5 = sread(_Title_Bass)
+  temp6 = sread(_Title_Bass)
+  AUDV1 = temp4
+  AUDC1 = temp5
+  AUDF1 = temp6
+  title_bass_duration = sread(_Title_Bass)
+
+_after_title_bass
+  title_melody_duration = title_melody_duration - 1
+  if title_melody_duration then goto _after_title_melody
+
+_read_title_melody_event
+  temp4 = sread(_Title_Melody)
+  if temp4 = 255 then title_music_setup_mode = TITLE_MUSIC_SETUP_MELODY : goto _title_melody_setup
+  temp5 = sread(_Title_Melody)
+  temp6 = sread(_Title_Melody)
+  AUDV0 = temp4
+  AUDC0 = temp5
+  AUDF0 = temp6
+  title_melody_duration = sread(_Title_Melody)
+
+_after_title_melody
+  goto _after_title_music
+
+_title_bass_setup
+  sdata _Title_Bass = u
+  ; G
+  8,12,26
+  28
+  0,0,0
+  4
+  8,12,17
+  28
+  0,0,0
+  4
+  8,12,26
+  28
+  0,0,0
+  4
+  8,12,17
+  28
+  0,0,0
+  4
+
+  ; C
+  8,12,19
+  28
+  0,0,0
+  4
+  8,12,26
+  28
+  0,0,0
+  4
+  8,12,19
+  28
+  0,0,0
+  4
+  8,12,26
+  28
+  0,0,0
+  4
+
+  ; G
+  8,12,26
+  28
+  0,0,0
+  4
+  8,12,17
+  28
+  0,0,0
+  4
+  8,12,26
+  28
+  0,0,0
+  4
+  8,12,17
+  28
+  0,0,0
+  4
+
+  ; C
+  8,12,17
+  28
+  0,0,0
+  4
+  8,12,23
+  28
+  0,0,0
+  4
+  8,12,17
+  28
+  0,0,0
+  4
+  8,12,23
+  28
+  0,0,0
+  4
+  255
+end
+  title_bass_duration = 1
+  if title_music_setup_mode = TITLE_MUSIC_SETUP_INIT then goto _title_melody_setup
+  goto _read_title_bass_event
+
+_title_melody_setup
+  sdata _Title_Melody = w
+  8,4,19
+  16
+  8,4,26
+  16
+  8,4,31
+  16
+  8,4,26
+  16
+  8,4,29
+  16
+  8,4,26
+  16
+  8,4,31
+  32
+  255
+end
+  title_melody_duration = 1
+  if title_music_setup_mode = TITLE_MUSIC_SETUP_INIT then goto mainloop
+  goto _read_title_melody_event
 
 _room_right_boundary_check
   if missile0x <= SCR_LEFT_X && missile1x <= SCR_LEFT_X then goto _room_middle bank2

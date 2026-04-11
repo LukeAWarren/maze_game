@@ -46,11 +46,17 @@ All 26 registers (a–z) are assigned. Do not use a register without first check
 | j | p1_move_counter | frames elapsed since last player1 move |
 | k | p0_room_number | room player0 (objective) is currently in |
 | l | game_over | 0 = playing, non-zero = game over |
-| m | color_cycle | current color index during game over (0–4) |
+| m | color_cycle | current color index during game over (0–8) |
 | n | color_cycle_timer | frames elapsed in current color step |
 | o | p0_y | saved y position of player0 when hidden |
 | p | game_state | STATE_TITLE=0 or STATE_PLAY=1 |
-| q–z | (free) | not yet assigned |
+| q | title_bass_duration | title music bass duration counter |
+| r | title_melody_duration | title music melody duration counter |
+| s | title_music_setup_mode | title music setup return mode |
+| t | (free) | not yet assigned |
+| u/v | _Title_Bass sdata pointer | title music bass stream pointer |
+| w/x | _Title_Melody sdata pointer | title music melody stream pointer |
+| y/z | (free) | not yet assigned |
 
 Temp variables `temp1`–`temp6` are used within single logical blocks and reset after `drawscreen`. They are re-aliased at point of use (e.g. `dim mid_delta = temp3`).
 
@@ -88,8 +94,12 @@ J_DEBOUNCE_DELAY = 4
 - `player1` is an AI sprite that moves toward the midpoint of missile0 and missile1
 - `player0` is the stationary objective sprite
 - Game ends when `player1` reaches the same x/y position as `player0` in the same room
-- Game over freezes play and cycles the room colors through 5 presets
+- Game over freezes play and cycles the room colors through 9 presets
 - Title screen is active until either fire button is pressed
+- Title screen plays two-voice music:
+  - `_Title_Bass` on channel 1 (`AUDV1`/`AUDC1`/`AUDF1`)
+  - `_Title_Melody` on channel 0 (`AUDV0`/`AUDC0`/`AUDF0`)
+  - Bass loop is 512 frames; melody loop is 128 frames, so they stay in a 4:1 sync ratio
 
 ## Collision Detection — Two Separate Systems
 
@@ -130,7 +140,7 @@ The title screen uses `playfield:` because it is a one-time static layout and is
 
 - `set romsize 8k` — 2 banks of 4K each
 - **Bank 1:** everything that runs every frame (input, AI, p0/p1 logic, game-over, title loop, boundary-check dispatch stubs)
-- **Bank 2:** room setup routines (`_room_right`, `_room_middle`, `_room_left`, `_room_top`, `_room_bottom`) — only run on room transitions
+- **Bank 2:** room setup routines (`_room_right`, `_room_middle`, `_room_left`, `_room_top`, `_room_bottom`, and corner rooms) — only run on room transitions
 
 Each bank 2 room routine ends with `goto _end_boundary_check bank1` to return to the main loop.
 
@@ -154,10 +164,10 @@ ROOM_MIDDLE      = 2
 ROOM_LEFT        = 3
 ROOM_TOP         = 4
 ROOM_BOTTOM      = 5
-ROOM_TOP_RIGHT   = 6   (not yet implemented)
-ROOM_TOP_LEFT    = 7   (not yet implemented)
-ROOM_BOTTOM_LEFT = 8   (not yet implemented)
-ROOM_BOTTOM_RIGHT= 9   (not yet implemented)
+ROOM_TOP_RIGHT   = 6
+ROOM_TOP_LEFT    = 7
+ROOM_BOTTOM_LEFT = 8
+ROOM_BOTTOM_RIGHT= 9
 ```
 
 Connections (implemented):
@@ -166,10 +176,6 @@ ROOM_RIGHT <-> ROOM_MIDDLE  (left/right doorway)
 ROOM_MIDDLE <-> ROOM_LEFT   (left/right doorway)
 ROOM_MIDDLE <-> ROOM_TOP    (top/bottom doorway)
 ROOM_MIDDLE <-> ROOM_BOTTOM (top/bottom doorway)
-```
-
-Planned connections (not yet implemented):
-```
 ROOM_TOP    <-> ROOM_TOP_RIGHT
 ROOM_LEFT   <-> ROOM_TOP_LEFT
 ROOM_BOTTOM <-> ROOM_BOTTOM_LEFT
@@ -182,6 +188,7 @@ ROOM_BOTTOM <-> ROOM_BOTTOM_RIGHT
 - When adding a room: update bank 1 boundary routing AND add the room init block in bank 2
 - When adding a room connection: update the boundary check for both rooms involved
 - Keep sprite colors readable against each room's background/playfield colors
-- All new variable aliases must map to currently-free registers (q–z) or reuse an existing register if the usage doesn't overlap
+- All new variable aliases must map to currently-free registers or reuse an existing register if the usage doesn't overlap
+- Do not reuse `u`/`v` or `w`/`x` for frame-to-frame state while title music is active; they are `sdata` pointers
 - Temp variables (`temp1`–`temp6`) are safe to re-alias within a block but are reset by `drawscreen` — never rely on them across frames
 - Do not use `collision()` for wall detection — the manual `pfread()` system is intentional and required for the coordinate-based approach

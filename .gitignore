@@ -12,3 +12,5 @@
 /.cache/bB.asm
 /.cache/2600basic_variable_redefs.h
 /.cache/includes.bB
+/.cache/bin
+/.cache/*probe*.26b
