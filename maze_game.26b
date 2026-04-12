@@ -556,7 +556,8 @@ _start_game_over
   game_over = 1
   color_cycle = 0
   color_cycle_timer = 0
-  goto _game_over
+  title_music_setup_mode = TITLE_MUSIC_SETUP_INIT
+  goto _title_bass_setup
 
 _game_over
   if color_cycle_timer < COLOR_CYCLE_DELAY then color_cycle_timer = color_cycle_timer + 1 : goto _game_over_colors
@@ -576,6 +577,8 @@ _game_over_colors
   if color_cycle = 8 then COLUBK = TEAL_DARK : COLUPF = TEAL_LIGHT
   COLUP0 = BLUE
   COLUP1 = PINK
+  goto _title_music_loop
+_after_victory_music
   drawscreen
   goto mainloop
 
@@ -654,6 +657,7 @@ _after_title_bass
 
 _read_title_melody_event
   temp4 = sread(_Title_Melody)
+  if temp4 = 255 && game_over then title_music_setup_mode = TITLE_MUSIC_SETUP_MELODY : goto _victory_melody_setup
   if temp4 = 255 then goto _next_title_melody_phrase
   temp5 = sread(_Title_Melody)
   temp6 = sread(_Title_Melody)
@@ -671,6 +675,7 @@ _next_title_melody_phrase
   goto _title_melody_setup
 
 _after_title_melody
+  if game_over then goto _after_victory_music
   goto _after_title_music
 
 _title_bass_setup
@@ -749,6 +754,7 @@ _title_bass_setup
   255
 end
   title_bass_duration = 1
+  if title_music_setup_mode = TITLE_MUSIC_SETUP_INIT && game_over then goto _victory_melody_setup
   if title_music_setup_mode = TITLE_MUSIC_SETUP_INIT then goto _title_melody_setup
   goto _read_title_bass_event
 
@@ -793,6 +799,30 @@ _title_melody_2_setup
   255
 end
   title_melody_duration = 1
+  goto _read_title_melody_event
+
+_victory_melody_setup
+  sdata _Victory_Melody = w
+  8,12,26
+  8
+  8,12,23
+  8
+  8,12,20
+  8
+  8,12,19
+  8
+  8,12,17
+  8
+  8,12,15
+  8
+  8,4,20
+  8
+  8,4,19
+  8
+  255
+end
+  title_melody_duration = 1
+  if title_music_setup_mode = TITLE_MUSIC_SETUP_INIT then goto _game_over
   goto _read_title_melody_event
 
 _room_right_boundary_check
@@ -879,9 +909,9 @@ _inititial_game_room
     ...............................X
     ...............................X
     ...............................X
-    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.X
-    .............................X.X
-    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    ...............................X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
     ...............................X
     .........................XXXXXXX
     .........................X.....X
