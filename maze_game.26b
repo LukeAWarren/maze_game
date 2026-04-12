@@ -810,6 +810,8 @@ _skip_room_bottom_right_boundary_check
 
   dim p1_gate_transfer = temp1
 
+  ; Room playfields are 32 columns by 11 rows. X = wall, . = open floor.
+
 _room_right
   if mi_room_number = ROOM_MIDDLE then missile0x = ENTRY_GATE_LEFT_X
   if mi_room_number = ROOM_MIDDLE then missile1x = ENTRY_GATE_LEFT_X
@@ -821,14 +823,19 @@ _inititial_game_room
   mi_room_number = ROOM_RIGHT
   COLUBK = BLACK
   COLUPF = WHITE
-  pfclear
-  pfhline 0 0 31 on
-  pfhline 0 4 31 on
-  pfhline 0 6 31 on
-  pfhline 0 10 31 on
-  pfvline 0 0 2 on
-  pfvline 0 8 10 on
-  pfvline 31 0 10 on
+  playfield:
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    ...............................X
+    ...............................X
+    ...............................X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.X
+    .............................X.X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.X
+    ...............................X
+    ...............................X
+    ...............................X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+end
   goto _end_boundary_check bank1
 
 _room_middle
@@ -861,34 +868,19 @@ _room_middle
   mi_room_number = ROOM_MIDDLE
   COLUBK = ORANGE_DARK
   COLUPF = ORANGE_LIGHT
-  pfclear
-  pfhline 0 0 13 on
-  pfpixel 16 0 on
-  pfpixel 19 0 on
-  pfhline 22 0 31 on
-  pfpixel 0 1 on
-  pfpixel 16 1 on
-  pfpixel 19 1 on
-  pfpixel 31 1 on
-  pfpixel 0 2 on
-  pfpixel 16 2 on
-  pfhline 19 2 27 on
-  pfpixel 31 2 on
-  pfpixel 0 3 on
-  pfpixel 16 3 on
-  pfpixel 27 3 on
-  pfpixel 16 4 on
-  pfhline 27 4 31 on
-  pfpixel 16 5 on
-  pfpixel 0 6 on
-  pfhline 16 6 31 on
-  pfpixel 0 7 on
-  pfpixel 0 8 on
-  pfpixel 31 8 on
-  pfpixel 0 9 on
-  pfpixel 31 9 on
-  pfhline 0 10 13 on
-  pfhline 18 10 31 on
+  playfield:
+    XXXXXXXXXXXXXX..X..X..XXXXXXXXXX
+    X...............X..X............
+    X...............X..X............
+    X...............X..X............
+    ................X..X.....XXXXXXX
+    ................X..X.....X......
+    X...............X..XXXXXXX..XXXX
+    X...............X...........X...
+    X...............XXXXXXXXXXXXX...
+    X...............................
+    XXXXXXXXXXXXXX....XXXXXXXXXXXXXX
+end
   goto _end_boundary_check bank1
 
 _room_left
@@ -907,13 +899,19 @@ _room_left
   mi_room_number = ROOM_LEFT
   COLUBK = GRAY_DARK
   COLUPF = GRAY_LIGHT
-  pfclear
-  pfhline 0 0 13 on
-  pfhline 18 0 31 on
-  pfhline 0 10 31 on
-  pfvline 0 0 10 on
-  pfvline 31 0 3 on
-  pfvline 31 6 10 on
+  playfield:
+    XXXXXXXXXXXXXX....XXXXXXXXXXXXXX
+    X..............................X
+    X..............................X
+    X..............................X
+    X...............................
+    X...............................
+    X..............................X
+    X..............................X
+    X..............................X
+    X..............................X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+end
   goto _end_boundary_check bank1
 
 _room_top
@@ -932,15 +930,19 @@ _room_top
   mi_room_number = ROOM_TOP
   COLUBK = GREEN_DARK
   COLUPF = GREEN_LIGHT
-  pfclear
-  pfhline 0 0 31 on
-  pfvline 0 0 10 on
-  pfvline 31 0 3 on
-  pfvline 31 6 10 on
-  pfhline 0 10 13 on
-  pfpixel 16 10 on
-  pfpixel 19 10 on
-  pfhline 22 10 31 on
+  playfield:
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    X..............................X
+    X..............................X
+    X..............................X
+    X...............................
+    X...............................
+    X..............................X
+    X..............................X
+    X..............................X
+    X..............................X
+    XXXXXXXXXXXXXX........XXXXXXXXXX
+end
   goto _end_boundary_check bank1
 
 _room_bottom
@@ -965,14 +967,19 @@ _room_bottom
   mi_room_number = ROOM_BOTTOM
   COLUBK = PURPLE_DARK
   COLUPF = PURPLE_LIGHT
-  pfclear
-  pfhline 0 0 13 on
-  pfhline 18 0 31 on
-  pfvline 0 0 3 on
-  pfvline 0 6 10 on
-  pfvline 31 0 3 on
-  pfvline 31 6 10 on
-  pfhline 0 10 31 on
+  playfield:
+    XXXXXXXXXXXXXX....XXXXXXXXXXXXXX
+    X..............................X
+    X..............................X
+    X..............................X
+    ................................
+    ................................
+    X..............................X
+    X..............................X
+    X..............................X
+    X..............................X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+end
   goto _end_boundary_check bank1
 
 _room_top_right
@@ -985,12 +992,19 @@ _room_top_right
   mi_room_number = ROOM_TOP_RIGHT
   COLUBK = GOLD_DARK
   COLUPF = GOLD_LIGHT
-  pfclear
-  pfhline 0 0 31 on
-  pfhline 0 10 31 on
-  pfvline 0 0 3 on
-  pfvline 0 6 10 on
-  pfvline 31 0 10 on
+  playfield:
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    X..............................X
+    X..............................X
+    X..............................X
+    ...............................X
+    ...............................X
+    X..............................X
+    X..............................X
+    X..............................X
+    X..............................X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+end
   goto _end_boundary_check bank1
 
 _room_top_left
@@ -1003,14 +1017,19 @@ _room_top_left
   mi_room_number = ROOM_TOP_LEFT
   COLUBK = BRICK_DARK
   COLUPF = BRICK_LIGHT
-  pfclear
-  pfhline 0 0 31 on
-  pfvline 0 0 10 on
-  pfvline 31 0 10 on
-  pfhline 0 10 13 on
-  pfpixel 16 10 on
-  pfpixel 19 10 on
-  pfhline 22 10 31 on
+  playfield:
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    X..............................X
+    X..............................X
+    X..............................X
+    X..............................X
+    X..............................X
+    X..............................X
+    X..............................X
+    X..............................X
+    X..............................X
+    XXXXXXXXXXXXXX..X..X..XXXXXXXXXX
+end
   goto _end_boundary_check bank1
 
 _room_bottom_left
@@ -1023,12 +1042,19 @@ _room_bottom_left
   mi_room_number = ROOM_BOTTOM_LEFT
   COLUBK = OLIVE_DARK
   COLUPF = OLIVE_LIGHT
-  pfclear
-  pfhline 0 0 31 on
-  pfhline 0 10 31 on
-  pfvline 0 0 10 on
-  pfvline 31 0 3 on
-  pfvline 31 6 10 on
+  playfield:
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    X..............................X
+    X..............................X
+    X..............................X
+    X...............................
+    X...............................
+    X..............................X
+    X..............................X
+    X..............................X
+    X..............................X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+end
   goto _end_boundary_check bank1
 
 _room_bottom_right
@@ -1041,10 +1067,17 @@ _room_bottom_right
   mi_room_number = ROOM_BOTTOM_RIGHT
   COLUBK = TEAL_DARK
   COLUPF = TEAL_LIGHT
-  pfclear
-  pfhline 0 0 31 on
-  pfhline 0 10 31 on
-  pfvline 0 0 3 on
-  pfvline 0 6 10 on
-  pfvline 31 0 10 on
+  playfield:
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    X..............................X
+    X..............................X
+    X..............................X
+    ...............................X
+    ...............................X
+    X..............................X
+    X..............................X
+    X..............................X
+    X..............................X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+end
   goto _end_boundary_check bank1
