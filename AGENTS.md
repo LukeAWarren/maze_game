@@ -69,7 +69,7 @@ Temp variables `temp1`–`temp6` are used within single logical blocks and reset
 SCR_LEFT_X  = 18     SCR_RIGHT_X = 142
 SCR_TOP_Y   = 4      SCR_BOT_Y   = 87
 OFFSCRN_Y   = 200    ; y value used to hide sprites off-screen
-SCORE_COLOR = $1C    ; gold score color
+SCORE_COLOR = $2E    ; gold score color
 
 ; Entry gate positions (where missiles/player1 appear when entering a room)
 ENTRY_GATE_LEFT_X  = 22    ENTRY_GATE_RIGHT_X = 138

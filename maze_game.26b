@@ -981,15 +981,15 @@ _room_top
   COLUPF = GREEN_LIGHT
   playfield:
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-    X..............................X
-    X..............................X
-    X..............................X
     X...............................
+    X...............XXXXXXXXXXXXXXXX
     X...............................
-    X..............................X
-    X..............................X
-    X..............................X
-    X..............................X
+    X...............XXXXXXXXXXXXXXXX
+    X...............................
+    X...............XXXXXXXXXXXXXXXX
+    X...............X...............
+    X...............X..XXXXXXXXXXXXX
+    X...............X..X............
     XXXXXXXXXXXXXX..X..X..XXXXXXXXXX
 end
   goto _end_boundary_check bank1
@@ -1043,15 +1043,15 @@ _room_top_right
   COLUPF = GOLD_LIGHT
   playfield:
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-    X..............................X
-    X..............................X
-    X..............................X
     ...............................X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.X
+    .............................X.X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXX..X.X
+    ..........................X..X.X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXX..X.X
+    .............................X.X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.X
     ...............................X
-    X..............................X
-    X..............................X
-    X..............................X
-    X..............................X
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 end
   goto _end_boundary_check bank1
