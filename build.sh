@@ -15,6 +15,7 @@ else
 fi
 
 SOURCE_BASENAME=$(basename "$SOURCE_FILE")
+SOURCE_STEM=${SOURCE_BASENAME%.*}
 
 if [ ! -x "$BB_HOME/2600basic.sh" ]; then
   echo "### ERROR: couldn't find 2600basic.sh at $BB_HOME"
@@ -47,5 +48,9 @@ move_if_exists "$SCRIPT_DIR/includes.bB" "$CACHE_DIR/includes.bB"
 for ext in asm bin lst sym; do
   move_if_exists "$SCRIPT_DIR/$SOURCE_FILE.$ext" "$BIN_DIR/$SOURCE_BASENAME.$ext"
 done
+
+if [ -f "$BIN_DIR/$SOURCE_BASENAME.bin" ]; then
+  cp -f "$BIN_DIR/$SOURCE_BASENAME.bin" "$BIN_DIR/$SOURCE_STEM.a26"
+fi
 
 exit "$build_status"

@@ -199,6 +199,8 @@ end
   goto _title_screen
 
 mainloop
+  ; Console Reset is the 2600 start/reset button.
+  if switchreset then reboot
   if game_state = STATE_TITLE then goto _title_loop
   NUSIZ0 = MISSLE_WIDTH_BIN ; four pixels wide
   NUSIZ1 = MISSLE_WIDTH_BIN ; four pixels wide
