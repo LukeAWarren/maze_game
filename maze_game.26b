@@ -861,7 +861,7 @@ _room_right
   if mi_room_number = ROOM_MIDDLE then missile0x = ENTRY_GATE_LEFT_X
   if mi_room_number = ROOM_MIDDLE then missile1x = ENTRY_GATE_LEFT_X
   p1_gate_transfer = 0
-  if mi_room_number = ROOM_MIDDLE && p1_room_number = ROOM_MIDDLE && player1y <> OFFSCRN_Y && player1x >= ENTRY_GATE_RIGHT_X - P1_GATE_THRESHOLD then p1_gate_transfer = 1
+  if mi_room_number = ROOM_MIDDLE && p1_room_number = ROOM_MIDDLE && player1y <> OFFSCRN_Y && player1x >= ENTRY_GATE_RIGHT_X then p1_gate_transfer = 1
   if p1_gate_transfer then player1x = ENTRY_GATE_LEFT_X + P1_GATE_THRESHOLD
   if p1_gate_transfer then p1_room_number = ROOM_RIGHT
   if mi_room_number = ROOM_BOTTOM_RIGHT then missile0y = ENTRY_GATE_BOT_Y
@@ -895,13 +895,13 @@ _room_middle
   if mi_room_number = ROOM_RIGHT then missile0x = ENTRY_GATE_RIGHT_X
   if mi_room_number = ROOM_RIGHT then missile1x = ENTRY_GATE_RIGHT_X
   p1_gate_transfer = 0
-  if mi_room_number = ROOM_RIGHT && p1_room_number = ROOM_RIGHT && player1y <> OFFSCRN_Y && player1x <= ENTRY_GATE_LEFT_X + P1_GATE_THRESHOLD then p1_gate_transfer = 1
+  if mi_room_number = ROOM_RIGHT && p1_room_number = ROOM_RIGHT && player1y <> OFFSCRN_Y && player1x <= ENTRY_GATE_LEFT_X - P1_GATE_THRESHOLD then p1_gate_transfer = 1
   if p1_gate_transfer then player1x = ENTRY_GATE_RIGHT_X - P1_GATE_THRESHOLD
   if p1_gate_transfer then p1_room_number = ROOM_MIDDLE
   if mi_room_number = ROOM_LEFT then missile0x = ENTRY_GATE_LEFT_X
   if mi_room_number = ROOM_LEFT then missile1x = ENTRY_GATE_LEFT_X
   p1_gate_transfer = 0
-  if mi_room_number = ROOM_LEFT && p1_room_number = ROOM_LEFT && player1y <> OFFSCRN_Y && player1x >= ENTRY_GATE_RIGHT_X - P1_GATE_THRESHOLD then p1_gate_transfer = 1
+  if mi_room_number = ROOM_LEFT && p1_room_number = ROOM_LEFT && player1y <> OFFSCRN_Y && player1x >= ENTRY_GATE_RIGHT_X then p1_gate_transfer = 1
   if p1_gate_transfer then player1x = ENTRY_GATE_LEFT_X + P1_GATE_THRESHOLD
   if p1_gate_transfer then p1_room_number = ROOM_MIDDLE
   if mi_room_number = ROOM_TOP then missile0y = ENTRY_GATE_TOP_Y
@@ -938,7 +938,7 @@ _room_left
   if mi_room_number = ROOM_MIDDLE then missile0x = ENTRY_GATE_RIGHT_X
   if mi_room_number = ROOM_MIDDLE then missile1x = ENTRY_GATE_RIGHT_X
   p1_gate_transfer = 0
-  if mi_room_number = ROOM_MIDDLE && p1_room_number = ROOM_MIDDLE && player1y <> OFFSCRN_Y && player1x <= ENTRY_GATE_LEFT_X + P1_GATE_THRESHOLD then p1_gate_transfer = 1
+  if mi_room_number = ROOM_MIDDLE && p1_room_number = ROOM_MIDDLE && player1y <> OFFSCRN_Y && player1x <= ENTRY_GATE_LEFT_X - P1_GATE_THRESHOLD then p1_gate_transfer = 1
   if p1_gate_transfer then player1x = ENTRY_GATE_RIGHT_X - P1_GATE_THRESHOLD
   if p1_gate_transfer then p1_room_number = ROOM_LEFT
   if mi_room_number = ROOM_TOP_LEFT then missile0y = ENTRY_GATE_TOP_Y
@@ -975,13 +975,13 @@ _room_top
   if mi_room_number = ROOM_TOP_LEFT then missile0x = ENTRY_GATE_LEFT_X
   if mi_room_number = ROOM_TOP_LEFT then missile1x = ENTRY_GATE_LEFT_X
   p1_gate_transfer = 0
-  if mi_room_number = ROOM_TOP_LEFT && p1_room_number = ROOM_TOP_LEFT && player1y <> OFFSCRN_Y && player1x >= ENTRY_GATE_RIGHT_X - P1_GATE_THRESHOLD then p1_gate_transfer = 1
+  if mi_room_number = ROOM_TOP_LEFT && p1_room_number = ROOM_TOP_LEFT && player1y <> OFFSCRN_Y && player1x >= ENTRY_GATE_RIGHT_X then p1_gate_transfer = 1
   if p1_gate_transfer then player1x = ENTRY_GATE_LEFT_X + P1_GATE_THRESHOLD
   if p1_gate_transfer then p1_room_number = ROOM_TOP
   if mi_room_number = ROOM_TOP_RIGHT then missile0x = ENTRY_GATE_RIGHT_X
   if mi_room_number = ROOM_TOP_RIGHT then missile1x = ENTRY_GATE_RIGHT_X
   p1_gate_transfer = 0
-  if mi_room_number = ROOM_TOP_RIGHT && p1_room_number = ROOM_TOP_RIGHT && player1y <> OFFSCRN_Y && player1x <= ENTRY_GATE_LEFT_X + P1_GATE_THRESHOLD then p1_gate_transfer = 1
+  if mi_room_number = ROOM_TOP_RIGHT && p1_room_number = ROOM_TOP_RIGHT && player1y <> OFFSCRN_Y && player1x <= ENTRY_GATE_LEFT_X - P1_GATE_THRESHOLD then p1_gate_transfer = 1
   if p1_gate_transfer then player1x = ENTRY_GATE_RIGHT_X - P1_GATE_THRESHOLD
   if p1_gate_transfer then p1_room_number = ROOM_TOP
   mi_room_number = ROOM_TOP
@@ -1012,13 +1012,13 @@ _room_bottom
   if mi_room_number = ROOM_BOTTOM_LEFT then missile0x = ENTRY_GATE_LEFT_X
   if mi_room_number = ROOM_BOTTOM_LEFT then missile1x = ENTRY_GATE_LEFT_X
   p1_gate_transfer = 0
-  if mi_room_number = ROOM_BOTTOM_LEFT && p1_room_number = ROOM_BOTTOM_LEFT && player1y <> OFFSCRN_Y && player1x >= ENTRY_GATE_RIGHT_X - P1_GATE_THRESHOLD then p1_gate_transfer = 1
+  if mi_room_number = ROOM_BOTTOM_LEFT && p1_room_number = ROOM_BOTTOM_LEFT && player1y <> OFFSCRN_Y && player1x >= ENTRY_GATE_RIGHT_X then p1_gate_transfer = 1
   if p1_gate_transfer then player1x = ENTRY_GATE_LEFT_X + P1_GATE_THRESHOLD
   if p1_gate_transfer then p1_room_number = ROOM_BOTTOM
   if mi_room_number = ROOM_BOTTOM_RIGHT then missile0x = ENTRY_GATE_RIGHT_X
   if mi_room_number = ROOM_BOTTOM_RIGHT then missile1x = ENTRY_GATE_RIGHT_X
   p1_gate_transfer = 0
-  if mi_room_number = ROOM_BOTTOM_RIGHT && p1_room_number = ROOM_BOTTOM_RIGHT && player1y <> OFFSCRN_Y && player1x <= ENTRY_GATE_LEFT_X + P1_GATE_THRESHOLD then p1_gate_transfer = 1
+  if mi_room_number = ROOM_BOTTOM_RIGHT && p1_room_number = ROOM_BOTTOM_RIGHT && player1y <> OFFSCRN_Y && player1x <= ENTRY_GATE_LEFT_X - P1_GATE_THRESHOLD then p1_gate_transfer = 1
   if p1_gate_transfer then player1x = ENTRY_GATE_RIGHT_X - P1_GATE_THRESHOLD
   if p1_gate_transfer then p1_room_number = ROOM_BOTTOM
   mi_room_number = ROOM_BOTTOM
@@ -1043,7 +1043,7 @@ _room_top_right
   if mi_room_number = ROOM_TOP then missile0x = ENTRY_GATE_LEFT_X
   if mi_room_number = ROOM_TOP then missile1x = ENTRY_GATE_LEFT_X
   p1_gate_transfer = 0
-  if mi_room_number = ROOM_TOP && p1_room_number = ROOM_TOP && player1y <> OFFSCRN_Y && player1x >= ENTRY_GATE_RIGHT_X - P1_GATE_THRESHOLD then p1_gate_transfer = 1
+  if mi_room_number = ROOM_TOP && p1_room_number = ROOM_TOP && player1y <> OFFSCRN_Y && player1x >= ENTRY_GATE_RIGHT_X then p1_gate_transfer = 1
   if p1_gate_transfer then player1x = ENTRY_GATE_LEFT_X + P1_GATE_THRESHOLD
   if p1_gate_transfer then p1_room_number = ROOM_TOP_RIGHT
   mi_room_number = ROOM_TOP_RIGHT
@@ -1068,7 +1068,7 @@ _room_top_left
   if mi_room_number = ROOM_TOP then missile0x = ENTRY_GATE_RIGHT_X
   if mi_room_number = ROOM_TOP then missile1x = ENTRY_GATE_RIGHT_X
   p1_gate_transfer = 0
-  if mi_room_number = ROOM_TOP && p1_room_number = ROOM_TOP && player1y <> OFFSCRN_Y && player1x <= ENTRY_GATE_LEFT_X + P1_GATE_THRESHOLD then p1_gate_transfer = 1
+  if mi_room_number = ROOM_TOP && p1_room_number = ROOM_TOP && player1y <> OFFSCRN_Y && player1x <= ENTRY_GATE_LEFT_X - P1_GATE_THRESHOLD then p1_gate_transfer = 1
   if p1_gate_transfer then player1x = ENTRY_GATE_RIGHT_X - P1_GATE_THRESHOLD
   if p1_gate_transfer then p1_room_number = ROOM_TOP_LEFT
   if mi_room_number = ROOM_LEFT then missile0y = ENTRY_GATE_BOT_Y
@@ -1099,7 +1099,7 @@ _room_bottom_left
   if mi_room_number = ROOM_BOTTOM then missile0x = ENTRY_GATE_RIGHT_X
   if mi_room_number = ROOM_BOTTOM then missile1x = ENTRY_GATE_RIGHT_X
   p1_gate_transfer = 0
-  if mi_room_number = ROOM_BOTTOM && p1_room_number = ROOM_BOTTOM && player1y <> OFFSCRN_Y && player1x <= ENTRY_GATE_LEFT_X + P1_GATE_THRESHOLD then p1_gate_transfer = 1
+  if mi_room_number = ROOM_BOTTOM && p1_room_number = ROOM_BOTTOM && player1y <> OFFSCRN_Y && player1x <= ENTRY_GATE_LEFT_X - P1_GATE_THRESHOLD then p1_gate_transfer = 1
   if p1_gate_transfer then player1x = ENTRY_GATE_RIGHT_X - P1_GATE_THRESHOLD
   if p1_gate_transfer then p1_room_number = ROOM_BOTTOM_LEFT
   mi_room_number = ROOM_BOTTOM_LEFT
@@ -1124,7 +1124,7 @@ _room_bottom_right
   if mi_room_number = ROOM_BOTTOM then missile0x = ENTRY_GATE_LEFT_X
   if mi_room_number = ROOM_BOTTOM then missile1x = ENTRY_GATE_LEFT_X
   p1_gate_transfer = 0
-  if mi_room_number = ROOM_BOTTOM && p1_room_number = ROOM_BOTTOM && player1y <> OFFSCRN_Y && player1x >= ENTRY_GATE_RIGHT_X - P1_GATE_THRESHOLD then p1_gate_transfer = 1
+  if mi_room_number = ROOM_BOTTOM && p1_room_number = ROOM_BOTTOM && player1y <> OFFSCRN_Y && player1x >= ENTRY_GATE_RIGHT_X then p1_gate_transfer = 1
   if p1_gate_transfer then player1x = ENTRY_GATE_LEFT_X + P1_GATE_THRESHOLD
   if p1_gate_transfer then p1_room_number = ROOM_BOTTOM_RIGHT
   if mi_room_number = ROOM_RIGHT then missile0y = ENTRY_GATE_TOP_Y
