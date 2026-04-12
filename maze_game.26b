@@ -951,7 +951,7 @@ _room_left
   COLUBK = GRAY_DARK
   COLUPF = GRAY_LIGHT
   playfield:
-    XXXXXXXXXXXXXX........XXXXXXXXXX
+    X........X......X...XXXXXXXXXXXX
     X..............................X
     X..............................X
     X..............................X
@@ -991,7 +991,7 @@ _room_top
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
     ................................
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-    ................................
+    X...............................
     ...XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
     XXXX............................
     ................XXXXXXXXXXXXXXXX
@@ -1082,16 +1082,16 @@ _room_top_left
   COLUPF = BRICK_LIGHT
   playfield:
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-    X...............................
-    X..............................X
-    X...............................
-    X...............................
-    X..............................X
-    X...............................
-    X...............................
-    X..............................X
-    X..............................X
-    XXXXXXXXXXXXXX........XXXXXXXXXX
+    X...........XX.............XX...
+    X...............XXXXXXXXX......X
+    X........XXXXXXXX......XXXXXXXXX
+    X........X.........XX...........
+    X........X.........X.XXXXXXXXXXX
+    X........X......XXXX.......X....
+    X........X......X..........X....
+    X........X......X...XXXX...X...X
+    X........X......X...X..........X
+    X........X......X...XXXXXXXXXXXX
 end
   goto _end_boundary_check bank1
 
