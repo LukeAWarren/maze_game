@@ -1,11 +1,10 @@
   include div_mul.asm
   set romsize 8k
 
-  const noscore = 1
-
   ; room colors
   const BLACK = $00
   const WHITE = $0E
+  const SCORE_COLOR = $2E
 
   const GRAY_DARK = $04
   const GRAY_LIGHT = $0C
@@ -65,6 +64,7 @@
   dim title_melody_duration = r
   dim title_music_setup_mode = s
   dim title_melody_phrase = t
+  dim score_frame_counter = y
 
   ; initialize the first room
   mi_room_number = 0
@@ -159,6 +159,7 @@
   const P1_MOVE_DELAY = 3
   const P1_GATE_THRESHOLD = 2 ; how close the p1 sprite is to the gate to pass through
   const COLOR_CYCLE_DELAY = 12
+  const SCORE_FRAMES_PER_SECOND = 60
 
   p1_move_counter = 0
 
@@ -190,6 +191,9 @@ end
   color_cycle = 0
   color_cycle_timer = 0
   game_state = STATE_TITLE
+  score = 0
+  score_frame_counter = 0
+  scorecolor = BLACK
   missile0y = OFFSCRN_Y
   missile1y = OFFSCRN_Y
   goto _title_screen
@@ -534,8 +538,17 @@ _end_p1_left
 
 _end_p1_logic
 
+_update_score_timer
+  score_frame_counter = score_frame_counter + 1
+  if score_frame_counter < SCORE_FRAMES_PER_SECOND then goto _end_score_timer
+  score_frame_counter = 0
+  score = score + 1
+_end_score_timer
+
   if p0_room_number = p1_room_number && player1x = player0x && player1y = player0y then goto _start_game_over
 
+  COLUP0 = BLUE
+  COLUP1 = PINK
   drawscreen
   goto mainloop
 
@@ -561,6 +574,8 @@ _game_over_colors
   if color_cycle = 6 then COLUBK = BRICK_DARK : COLUPF = BRICK_LIGHT
   if color_cycle = 7 then COLUBK = OLIVE_DARK : COLUPF = OLIVE_LIGHT
   if color_cycle = 8 then COLUBK = TEAL_DARK : COLUPF = TEAL_LIGHT
+  COLUP0 = BLUE
+  COLUP1 = PINK
   drawscreen
   goto mainloop
 
@@ -568,6 +583,8 @@ _title_loop
   if joy0fire || joy1fire then goto _start_game
   goto _title_music_loop
 _after_title_music
+  COLUP0 = BLUE
+  COLUP1 = PINK
   drawscreen
   goto mainloop
 
@@ -577,6 +594,9 @@ _start_game
   game_over = 0
   color_cycle = 0
   color_cycle_timer = 0
+  score = 0
+  score_frame_counter = 0
+  scorecolor = SCORE_COLOR
   p1_room_number = ROOM_RIGHT
   p0_room_number = ROOM_RIGHT
   player1x = START_P1_X
@@ -596,6 +616,7 @@ _title_screen
   mi_room_number = 0
   COLUBK = BLACK
   COLUPF = WHITE
+  scorecolor = BLACK
   playfield:
     XXXXXX.XX.XX.XXX.XXXX.XXX.XXXXXX
     .......X.X.X.X.X....X.X.........
@@ -969,7 +990,7 @@ _room_top
     X..............................X
     X..............................X
     X..............................X
-    XXXXXXXXXXXXXX........XXXXXXXXXX
+    XXXXXXXXXXXXXX..X..X..XXXXXXXXXX
 end
   goto _end_boundary_check bank1
 

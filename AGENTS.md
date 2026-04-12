@@ -27,6 +27,7 @@
 
 - Use `.cache/bb_commands_reference.md` as the local batari Basic reference
 - `include div_mul.asm` is already used by the project (provides multiplication/division)
+- `maze.txt` is the full 96×33 room layout reference; each `maze_game.26b` room playfield is a 32×11 slice from it
 
 ## Variable Register Map
 
@@ -56,7 +57,8 @@ All 26 registers (a–z) are assigned. Do not use a register without first check
 | t | title_melody_phrase | current title melody phrase index (0–7) |
 | u/v | _Title_Bass sdata pointer | title music bass stream pointer |
 | w/x | _Title_Melody/_Title_Melody_2 sdata pointer | title music melody stream pointer |
-| y/z | (free) | not yet assigned |
+| y | score_frame_counter | frames elapsed since the last score increment |
+| z | (free) | not yet assigned |
 
 Temp variables `temp1`–`temp6` are used within single logical blocks and reset after `drawscreen`. They are re-aliased at point of use (e.g. `dim mid_delta = temp3`).
 
@@ -67,6 +69,7 @@ Temp variables `temp1`–`temp6` are used within single logical blocks and reset
 SCR_LEFT_X  = 18     SCR_RIGHT_X = 142
 SCR_TOP_Y   = 4      SCR_BOT_Y   = 87
 OFFSCRN_Y   = 200    ; y value used to hide sprites off-screen
+SCORE_COLOR = $1C    ; gold score color
 
 ; Entry gate positions (where missiles/player1 appear when entering a room)
 ENTRY_GATE_LEFT_X  = 22    ENTRY_GATE_RIGHT_X = 138
@@ -83,6 +86,7 @@ PF_SCR_X_OFFSET = 18    PF_SCR_Y_OFFSET = 3
 P1_MOVE_DELAY      = 3   ; frames between player1 steps toward midpoint
 P1_GATE_THRESHOLD  = 2   ; how close player1 must be to a doorway to transfer rooms
 COLOR_CYCLE_DELAY  = 12  ; frames per color step during game over
+SCORE_FRAMES_PER_SECOND = 60 ; frames per score increment
 
 ; Input debounce
 J_DEBOUNCE_DELAY = 4
@@ -183,6 +187,13 @@ ROOM_TOP    <-> ROOM_TOP_RIGHT
 ROOM_LEFT   <-> ROOM_TOP_LEFT
 ROOM_BOTTOM <-> ROOM_BOTTOM_LEFT
 ROOM_BOTTOM <-> ROOM_BOTTOM_RIGHT
+```
+
+`maze.txt` slice layout:
+```
+ROOM_TOP_LEFT     ROOM_TOP     ROOM_TOP_RIGHT
+ROOM_LEFT         ROOM_MIDDLE  ROOM_RIGHT
+ROOM_BOTTOM_LEFT  ROOM_BOTTOM  ROOM_BOTTOM_RIGHT
 ```
 
 ## Editing Guidance
