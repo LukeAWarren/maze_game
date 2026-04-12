@@ -909,13 +909,13 @@ _inititial_game_room
     ...............................X
     ...............................X
     ...............................X
-    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-    ...............................X
-    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.X
+    .............................X.X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.X
     ...............................X
     .........................XXXXXXX
     .........................X.....X
-    XXXXXXXXXXXXXXXXXXXXXXXXXX.....X
+    XXXXXXXXXXXXXXXXXXXXXXXXXX.X.X.X
 end
   goto _end_boundary_check bank1
 
@@ -951,16 +951,16 @@ _room_middle
   COLUPF = ORANGE_LIGHT
   playfield:
     XXXXXXXXXXXXXX..X..X..XXXXXXXXXX
-    X...............X..X............
-    X...............X..X............
-    X...............X..X............
-    ................X..X.....XXXXXXX
-    ................X..X.....X......
-    X...............X..XXXXXXX..XXXX
-    X...............X...........X...
-    X...............XXXXXXXXXXXXX...
-    X...............................
-    XXXXXXXXXXXXXX....XXXXXXXXXXXXXX
+    X............X..X..X............
+    .............X..X..X............
+    XXXXXXXXXXXX.X..X..X............
+    X..........X.X..X..X.....XXXXXXX
+    X..........X.X..X..X.....X......
+    ...........X.X..X..XXXXXXX..XXXX
+    XXXX.......X.X..X...........X...
+    ...X.......X.X..XXXXXXXXXXXXX...
+    X..X.......X.X..................
+    X..XX.....XX.XXXXXXXXXXXXXXXXXXX
 end
   goto _end_boundary_check bank1
 
@@ -982,14 +982,14 @@ _room_left
   COLUPF = GRAY_LIGHT
   playfield:
     X........X......X...XXXXXXXXXXXX
-    X..............................X
-    X..............................X
-    X..............................X
-    X...............................
-    X...............................
-    X..............................X
-    X..............................X
-    X..............................X
+    X........X......X..............X
+    X........XXXX...X...............
+    X........X......X..............X
+    X........X...XXXXXXXXXXXXXXXXX.X
+    X........X......X............XXX
+    X........XXXX...X....XXXXXXX....
+    X........X...........X.....XXXXX
+    X........XXXXXXXXXXXXX..........
     X..............................X
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 end
@@ -1055,16 +1055,16 @@ _room_bottom
   COLUBK = PURPLE_DARK
   COLUPF = PURPLE_LIGHT
   playfield:
-    XXXXXXXXXXXXXX....XXXXXXXXXXXXXX
-    X..............................X
-    X..............................X
-    X..............................X
-    ................................
-    ................................
-    X..............................X
-    X..............................X
-    X..............................X
-    X..............................X
+    X..XX.....XX.XXXXXXXXXXXXXXXXXXX
+    ...X......X..X...X..............
+    XXX.....XX..X..X..X........XXXXX
+    .......X...X..X.X..X.......X....
+    XXXXXXX...X..X...X..X......X.XXX
+    ............X.....X........X.X..
+    XXXXXXXXXXXX.......XXXXXXXXX.X.X
+    .............................X.X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.X
+    ...............................X
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 end
   goto _end_boundary_check bank1
@@ -1137,15 +1137,15 @@ _room_bottom_left
   COLUPF = OLIVE_LIGHT
   playfield:
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-    X..............................X
-    X..............................X
-    X..............................X
+    X........................X......
+    X..............XXXXXX...X...XXXX
+    X..............X.....XX...XX....
+    X..............X.......XXX...XXX
+    X..............X..XXX........X..
+    X..............X.....XXXXXXXXXXX
+    X..............X................
+    X..............XXXXXXXXXXXXXXXXX
     X...............................
-    X...............................
-    X..............................X
-    X..............................X
-    X..............................X
-    X..............................X
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 end
   goto _end_boundary_check bank1
@@ -1167,16 +1167,16 @@ _room_bottom_right
   COLUBK = TEAL_DARK
   COLUPF = TEAL_LIGHT
   playfield:
-    XXXXXXXXXXXXXXXXXXXXXXXXXX.....X
-    X..............................X
-    X..............................X
-    X..............................X
-    ...............................X
-    ...............................X
-    X..............................X
-    X..............................X
-    X..............................X
-    X..............................X
+    XXXXXXXXXXXXXXXXXXXXXXXXXX.X.X.X
+    ..............X............X.X.X
+    XXXXXXXXXXXXX.X............X.X.X
+    ....X.......X.X............X.X.X
+    XXX.X.XXXXX.X.X............X.X.X
+    ..X.X.X...X.X..............X.X.X
+    X.X.X.X.X.X.XXXXXXXXXXXXXXXX.X.X
+    X.X...X.X.X..................X.X
+    X.XXXXX.X.XXXXXXXXXXXXXXXXXXXX.X
+    X.......X......................X
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 end
   goto _end_boundary_check bank1
