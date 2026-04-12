@@ -90,10 +90,24 @@
   const SCR_TOP_Y = 4
   const SCR_BOT_Y = 87
   const OFFSCRN_Y = 200
+  ; BLUE
   const START_M0_X = 100
-  const START_M0_Y = 20
+  const START_M0_Y = 65
+  ; PINK
   const START_M1_X = 100
-  const START_M1_Y = 75
+  const START_M1_Y = 25
+  
+  ; CHARACTER
+  const START_P1_X = 99
+  const START_P1_Y = 45
+  const TITLE_SCREEN_P1_X = 108
+  const TITLE_SCREEN_P1_Y = 45
+
+  ; DESTINATION
+  const START_P0_X = 129
+  const START_P0_Y = 77
+  const TITLE_SCREEN_P0_X = 53
+  const TITLE_SCREEN_P0_Y = 45
 
   const ENTRY_GATE_LEFT_X = 22
   const ENTRY_GATE_RIGHT_X = 138
@@ -154,11 +168,11 @@
     %10010000
     %11110000
 end
-  player1x = 100
-  player1y = 45
+  player1x = TITLE_SCREEN_P1_X
+  player1y = TITLE_SCREEN_P1_Y
 
   ; p1 starts in room 1
-  p1_room_number = 2
+  p1_room_number = ROOM_RIGHT
 
   player0:
     %10010000
@@ -166,12 +180,12 @@ end
     %01100000
     %10010000
 end
-  player0x = 50
-  player0y = 45
+  player0x = TITLE_SCREEN_P0_X
+  player0y = TITLE_SCREEN_P0_Y
   p0_y = player0y
 
   ; p0 starts in room 1
-  p0_room_number = 2
+  p0_room_number = ROOM_RIGHT
   game_over = 0
   color_cycle = 0
   color_cycle_timer = 0
@@ -565,6 +579,12 @@ _start_game
   color_cycle_timer = 0
   p1_room_number = ROOM_RIGHT
   p0_room_number = ROOM_RIGHT
+  player1x = START_P1_X
+  player1y = START_P1_Y
+  p1_y = START_P1_Y
+  player0x = START_P0_X
+  player0y = START_P0_Y
+  p0_y = START_P0_Y
   missile0x = START_M0_X
   missile0y = START_M0_Y
   missile1x = START_M1_X
@@ -832,9 +852,9 @@ _inititial_game_room
     .............................X.X
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.X
     ...............................X
-    ...............................X
-    ...............................X
-    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    .........................XXXXXXX
+    .........................X.....X
+    XXXXXXXXXXXXXXXXXXXXXXXXX......X
 end
   goto _end_boundary_check bank1
 
