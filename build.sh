@@ -11,7 +11,7 @@ if [ $# -gt 0 ] && [ "${1#-}" = "$1" ]; then
   SOURCE_FILE=$1
   shift
 else
-  SOURCE_FILE=maze_game.26b
+  SOURCE_FILE=rescue_terri.26b
 fi
 
 SOURCE_BASENAME=$(basename "$SOURCE_FILE")

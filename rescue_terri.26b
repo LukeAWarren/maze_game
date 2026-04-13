@@ -840,6 +840,37 @@ end
   title_melody_duration = 1
   goto _read_title_melody_event
 
+;_title_melody_3_setup
+;  sdata _Title_Melody_3 = w
+;  8,4,19
+;  16
+;  8,4,26
+;  8
+;  0,0,0
+;  56
+;  8,4,19
+;  8
+;  8,4,20
+;  8
+;  8,4,19
+;  8
+;  0,0,0
+;  8
+;  8,4,19
+;  8
+;  0,0,0
+;  8
+;  8,4,19
+;  16
+;  8,4,23
+;  16
+;  0,0,0
+;  96
+;  255
+;end
+;  title_melody_duration = 1
+;  goto _read_title_melody_event
+
 _easter_egg_melody_setup
   sdata _Easter_Egg_Melody = w
   8,12,17

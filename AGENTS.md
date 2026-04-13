@@ -1,11 +1,12 @@
-# Maze Game Notes
+# Rescue Terri Notes
 
 ## Build
 
 - Project root: `/Users/luke/code/atari/batari/maze_game`
-- Main source: `maze_game.26b`
+- Main source: `rescue_terri.26b`
 - Standard compile command: `sh ./build.sh`
 - `build.sh` defaults `bB` to `/Users/luke/opt/batari-Basic` and runs `2600basic.sh`
+- `build.sh` now defaults to `rescue_terri.26b`; passing an explicit source still works
 - Current CLI toolchain works in this repo with:
   - batari Basic `v1.9 (c)2025`
   - DASM `2.20.15-SNAPSHOT`
@@ -13,21 +14,26 @@
 ## Build Outputs
 
 - Standard build output location is `bin/`:
-  - `bin/maze_game.26b.asm`
-  - `bin/maze_game.26b.bin`
-  - `bin/maze_game.26b.lst`
-  - `bin/maze_game.26b.sym`
+  - `bin/rescue_terri.26b.asm`
+  - `bin/rescue_terri.26b.bin`
+  - `bin/rescue_terri.26b.lst`
+  - `bin/rescue_terri.26b.sym`
+  - `bin/rescue_terri.a26`
+- `build.sh` names outputs from the source basename, so alternate sources still emit `bin/<source>.{asm,bin,lst,sym}` and `bin/<stem>.a26`
 - Compiler intermediates are moved into `.cache/`:
   - `.cache/bB.asm`
   - `.cache/2600basic_variable_redefs.h`
   - `.cache/includes.bB`
 - If ADS is used directly, it may also refresh files under `bin/`
+- Latest known `rescue_terri.26b` build budget:
+  - `13 bytes of ROM space left in bank 1`
+  - `437 bytes of ROM space left in bank 2`
 
 ## Local References
 
 - Use `.cache/bb_commands_reference.md` as the local batari Basic reference
 - `include div_mul.asm` is already used by the project (provides multiplication/division)
-- `maze.txt` is the full 96×33 room layout reference; each `maze_game.26b` room playfield is a 32×11 slice from it
+- `maze.txt` is the full 96×33 room layout reference; each `rescue_terri.26b` room playfield is a 32×11 slice from it
 - `maze.txt` legend markers (`A`, `B`, `C`, `D`, `<>`) are annotations only; they are not present in the compiled playfield data
 
 ## Variable Register Map
@@ -168,6 +174,7 @@ Each bank 2 room routine ends with `goto _end_boundary_check bank1` to return to
 **Cost:** `goto bankN` = 49 cycles. Keep cross-bank jumps to a minimum (currently: once per room transition frame, which is acceptable).
 
 **Important:** Data tables can only be accessed from within the same bank they are defined in.
+That means free ROM in bank 2 cannot directly hold title music streams read every frame by bank 1 with `sread()` unless the playback design is changed to explicitly bank-switch around that data.
 
 ## Room Logic
 
@@ -226,6 +233,7 @@ ROOM_BOTTOM_RIGHT TEAL_DARK / TEAL_LIGHT
 ## Editing Guidance
 
 - **ROM space is tight.** Prefer small, targeted changes. Check `.cache/bB.asm` and `.lst` after building to monitor bank usage.
+- Title music bytes are constrained by bank 1. Bank 2's free space is not directly available for `_Title_Bass`, `_Title_Melody`, or any future `_Title_Melody_3` table unless the playback code is redesigned around bank switching.
 - When adding a room: update bank 1 boundary routing AND add the room init block in bank 2
 - When adding a room connection: update the boundary check for both rooms involved
 - When changing room geometry: keep `maze.txt` and the matching 32×11 `playfield:` block in sync
