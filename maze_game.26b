@@ -108,7 +108,7 @@
 
   ; DESTINATION
   const START_P0_X = 129
-  const START_P0_Y = 77
+  const START_P0_Y = 76
   const TITLE_SCREEN_P0_X = 53
   const TITLE_SCREEN_P0_Y = 45
 
