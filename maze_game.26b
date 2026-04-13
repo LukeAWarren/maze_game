@@ -78,6 +78,8 @@
   const ROOM_TOP_LEFT = 7
   const ROOM_BOTTOM_LEFT = 8
   const ROOM_BOTTOM_RIGHT = 9
+  const TEMPLE_BALL_X = 41
+  const TEMPLE_BALL_Y = 53
   const STATE_TITLE = 0
   const STATE_PLAY = 1
   const TITLE_MUSIC_SETUP_INIT = 0
@@ -150,6 +152,14 @@
   missile1height = MISSLE_HEIGHT - 1
   missile1x = START_M1_X
   missile1y = START_M1_Y
+
+  ; reflect the playfield and use a narrower ball width
+  CTRLPF = $11
+
+  ; temple easter egg ball
+  ballx = TEMPLE_BALL_X
+  bally = OFFSCRN_Y
+  ballheight = 1
 
   ; frames to wait before auto-repeat
   const J_DEBOUNCE_DELAY = 4
@@ -405,6 +415,8 @@ _begin_boundary_check
   if mi_room_number = ROOM_BOTTOM_RIGHT then goto _room_bottom_right_boundary_check
 
 _end_boundary_check
+
+  if mi_room_number = ROOM_BOTTOM_LEFT then bally = TEMPLE_BALL_Y else bally = OFFSCRN_Y
 
 _begin_p0_logic
   if p0_room_number = mi_room_number && player0y = OFFSCRN_Y then goto _restore_pos_p0
@@ -1139,15 +1151,15 @@ _room_bottom_left
   COLUPF = OLIVE_LIGHT
   playfield:
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-    X........................X......
-    X..............XXXXXX...X...XXXX
-    X..............X.....XX...XX....
-    X..............X.......XXX...XXX
-    X..............X..XXX........X..
-    X..............X.....XXXXXXXXXXX
-    X..............X................
-    X..............XXXXXXXXXXXXXXXXX
-    X...............................
+    X....XX..................X......
+    X...X..X........XXXXXX...X..XXXX
+    X..X....X.......X.....XX...X....
+    X.X..XX..X.....X.......XXXX..XXX
+    XX........X.....X..XXX.......X..
+    XX........X....X.....XXXXXXXXXXX
+    XX...XX...X....X................
+    XX..XXXX..X....XXXXXXXXXXXXXXXXX
+    XX.XXXXXX.......................
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 end
   goto _end_boundary_check bank1
