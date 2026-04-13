@@ -28,6 +28,7 @@
 - Use `.cache/bb_commands_reference.md` as the local batari Basic reference
 - `include div_mul.asm` is already used by the project (provides multiplication/division)
 - `maze.txt` is the full 96×33 room layout reference; each `maze_game.26b` room playfield is a 32×11 slice from it
+- `maze.txt` legend markers (`A`, `B`, `C`, `D`, `<>`) are annotations only; they are not present in the compiled playfield data
 
 ## Variable Register Map
 
@@ -58,7 +59,7 @@ All 26 registers (a–z) are assigned. Do not use a register without first check
 | u/v | _Title_Bass sdata pointer | title music bass stream pointer |
 | w/x | _Title_Melody/_Title_Melody_2 sdata pointer | title music melody stream pointer |
 | y | score_frame_counter | frames elapsed since the last score increment |
-| z | (free) | not yet assigned |
+| z | easter_egg_found | non-zero after the temple easter egg is found; selects the alternate game-over melody |
 
 Temp variables `temp1`–`temp6` are used within single logical blocks and reset after `drawscreen`. They are re-aliased at point of use (e.g. `dim mid_delta = temp3`).
 
@@ -74,6 +75,9 @@ SCORE_COLOR = $2E    ; gold score color
 ; Entry gate positions (where missiles/player1 appear when entering a room)
 ENTRY_GATE_LEFT_X  = 22    ENTRY_GATE_RIGHT_X = 138
 ENTRY_GATE_TOP_Y   = 8     ENTRY_GATE_BOT_Y   = 79
+
+; Temple easter egg ball
+TEMPLE_BALL_X = 41    TEMPLE_BALL_Y = 53
 
 ; Missile dimensions
 MISSLE_WIDTH  = 4    MISSLE_HEIGHT = 4
@@ -97,7 +101,9 @@ J_DEBOUNCE_DELAY = 4
 - `missile0` and `missile1` are the two player-controlled objects (joystick 0 and 1)
 - `player1` is an AI sprite that moves toward the midpoint of missile0 and missile1
 - `player0` is the stationary objective sprite
+- `ball` is only used for the temple easter egg in `ROOM_BOTTOM_LEFT`
 - Game ends when `player1` reaches the same x/y position as `player0` in the same room
+- Touching the temple ball triggers the easter egg, swaps the `player1` sprite art, and uses `_Easter_Egg_Melody` instead of `_Victory_Melody`
 - Game over freezes play and cycles the room colors through 9 presets
 - Title screen is active until either fire button is pressed
 - Title screen plays two-voice music:
@@ -134,20 +140,28 @@ When a sprite is not in the current room (`mi_room_number`), it is hidden by set
 
 This is checked each frame in the p0/p1 logic section.
 
-## Playfield Drawing — pfhline/pfvline/pfpixel vs playfield:
+The temple ball is separate from the sprite hide/show system:
+- `ballx` is fixed at `TEMPLE_BALL_X`
+- `bally` is `TEMPLE_BALL_Y` only in `ROOM_BOTTOM_LEFT`, otherwise `OFFSCRN_Y`
+- finding the easter egg immediately hides the ball for the rest of that run
 
-Room walls are drawn with `pfclear` + `pfhline`/`pfvline`/`pfpixel` rather than `playfield:` blocks because:
-1. Rooms are drawn dynamically at runtime during room transitions (in bank 2)
-2. The same playfield RAM is what `pfread()` reads for collision — it must stay current
-3. `pfhline`/`pfvline` is more ROM-efficient than full 32×11 `playfield:` data for simple geometric layouts
+## Playfield Drawing — Runtime `playfield:` Updates
 
-The title screen uses `playfield:` because it is a one-time static layout and is never used for collision detection.
+Room walls are currently stored as `playfield:` blocks inside the bank 2 room init routines, not as `pfclear` + `pfhline`/`pfvline`/`pfpixel`.
+
+Why this still works with collision:
+1. Each room transition jumps into bank 2 and rewrites the active playfield RAM for the destination room
+2. `pfread()` always checks that current playfield RAM, so collision stays aligned with the visible room
+3. The title screen also uses a `playfield:` block, but only for the title layout
+
+`maze.txt` matches all 9 gameplay room `playfield:` blocks exactly once the legend markers are ignored.
 
 ## Bank Switching Structure
 
 - `set romsize 8k` — 2 banks of 4K each
 - **Bank 1:** everything that runs every frame (input, AI, p0/p1 logic, game-over, title loop, boundary-check dispatch stubs)
 - **Bank 2:** room setup routines (`_room_right`, `_room_middle`, `_room_left`, `_room_top`, `_room_bottom`, and corner rooms) — only run on room transitions
+- `_inititial_game_room` is the startup entry point for the `ROOM_RIGHT` playfield/data and is also used when starting a new game
 
 Each bank 2 room routine ends with `goto _end_boundary_check bank1` to return to the main loop.
 
@@ -196,13 +210,27 @@ ROOM_LEFT         ROOM_MIDDLE  ROOM_RIGHT
 ROOM_BOTTOM_LEFT  ROOM_BOTTOM  ROOM_BOTTOM_RIGHT
 ```
 
+Room colors:
+```
+ROOM_RIGHT        BLACK / WHITE
+ROOM_MIDDLE       ORANGE_DARK / ORANGE_LIGHT
+ROOM_LEFT         GRAY_DARK / GRAY_LIGHT
+ROOM_TOP          GREEN_DARK / GREEN_LIGHT
+ROOM_BOTTOM       PURPLE_DARK / PURPLE_LIGHT
+ROOM_TOP_RIGHT    GOLD_DARK / GOLD_LIGHT
+ROOM_TOP_LEFT     BRICK_DARK / BRICK_LIGHT
+ROOM_BOTTOM_LEFT  OLIVE_DARK / OLIVE_LIGHT
+ROOM_BOTTOM_RIGHT TEAL_DARK / TEAL_LIGHT
+```
+
 ## Editing Guidance
 
 - **ROM space is tight.** Prefer small, targeted changes. Check `.cache/bB.asm` and `.lst` after building to monitor bank usage.
 - When adding a room: update bank 1 boundary routing AND add the room init block in bank 2
 - When adding a room connection: update the boundary check for both rooms involved
+- When changing room geometry: keep `maze.txt` and the matching 32×11 `playfield:` block in sync
 - Keep sprite colors readable against each room's background/playfield colors
-- All new variable aliases must map to currently-free registers or reuse an existing register if the usage doesn't overlap
+- There are currently no free registers; all new variable aliases must reuse an existing register only when the usage does not overlap
 - Do not reuse `u`/`v` or `w`/`x` for frame-to-frame state while title music is active; they are `sdata` pointers
 - Temp variables (`temp1`–`temp6`) are safe to re-alias within a block but are reset by `drawscreen` — never rely on them across frames
 - Do not use `collision()` for wall detection — the manual `pfread()` system is intentional and required for the coordinate-based approach
