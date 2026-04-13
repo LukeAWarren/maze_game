@@ -100,17 +100,21 @@
   const START_M1_X = 100
   const START_M1_Y = 25
   
-  ; CHARACTER
+  ; TERRI
   const START_P1_X = 99
   const START_P1_Y = 45
   const TITLE_SCREEN_P1_X = 113
   const TITLE_SCREEN_P1_Y = 52
 
-  ; DESTINATION
-  const START_P0_X = 129
-  const START_P0_Y = 76
-  const TITLE_SCREEN_P0_X = 31
-  const TITLE_SCREEN_P0_Y = 13
+  ; HOUSE
+  const START_P0_X = 127
+  const START_P0_Y = 75
+  const TITLE_SCREEN_P0_X = 111
+  const TITLE_SCREEN_P0_Y = 53
+
+  ; exact player1 anchor point that lands inside the house opening
+  const HOUSE_ENTRY_X = 129
+  const HOUSE_ENTRY_Y = 74
 
   const ENTRY_GATE_LEFT_X = 22
   const ENTRY_GATE_RIGHT_X = 138
@@ -187,10 +191,14 @@ end
   p1_room_number = ROOM_RIGHT
 
   player0:
-    %10010000
-    %01100000
-    %01100000
-    %10010000
+    %11111111
+    %01000010
+    %01011010
+    %01011010
+    %01000010
+    %11111111
+    %01111110
+    %00110000
 end
   player0x = TITLE_SCREEN_P0_X
   player0y = TITLE_SCREEN_P0_Y
@@ -561,7 +569,7 @@ _update_score_timer
 _end_score_timer
 
   if p1_room_number = ROOM_BOTTOM_LEFT && player1x <= TEMPLE_BALL_X && player1x >= TEMPLE_BALL_X - 3 && player1y <= TEMPLE_BALL_Y && player1y >= TEMPLE_BALL_Y - 3 then goto _start_easter_egg
-  if p0_room_number = p1_room_number && player1x = player0x && player1y = player0y then goto _start_game_over
+  if p0_room_number = p1_room_number && player1x = HOUSE_ENTRY_X && player1y = HOUSE_ENTRY_Y then goto _start_game_over
 
   COLUP0 = BLUE
   COLUP1 = PINK
@@ -953,11 +961,11 @@ _inititial_game_room
     ...............................X
     ...............................X
     ...............................X
-    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.X
-    .............................X.X
-    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.X
-    ...............................X
+    XXXXXXXXXXXXXXXXXXXXXXXX.......X
+    .......................X.......X
+    XXXXXXXXXXXXXXXXXXXXXXXX.......X
     .........................XXXXXXX
+    .........................X.....X
     .........................X.....X
     XXXXXXXXXXXXXXXXXXXXXXXXXX.X.X.X
 end
