@@ -774,6 +774,7 @@ _select_game_over_melody
   goto _victory_melody_setup
 
 _title_melody_setup
+  COLUPF = WHITE
   sdata _Title_Melody = w
   8,4,19
   16
@@ -796,6 +797,7 @@ end
   goto _read_title_melody_event
 
 _title_melody_2_setup
+  COLUPF = GOLD_LIGHT
   sdata _Title_Melody_2 = w
   8,4,19
   16
@@ -817,6 +819,7 @@ end
   goto _read_title_melody_event
 
 _title_melody_3_setup
+  COLUPF = TEAL_LIGHT
   sdata _Title_Melody_3 = w
   8,4,19
   16
