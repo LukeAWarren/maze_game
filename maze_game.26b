@@ -1087,7 +1087,7 @@ _room_top_right
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.X
     .............................X.X
     XXXXXXXXXXXXXXXXXXXXXXXXXXX..X.X
-    ..........................X..X.X
+    ....................XXXXXXX..X.X
     XXXXXXXXXXXXXXXXXXXXXXXXXXX..X.X
     .............................X.X
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.X
@@ -1114,11 +1114,11 @@ _room_top_left
   COLUPF = BRICK_LIGHT
   playfield:
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-    X...........XX.............XX...
+    XXXXXXXXXXXXX..............XX...
     X...............XXXXXXXXX......X
-    X........XXXXXXXX......XXXXXXXXX
-    X........X.........XX...........
-    X........X.........X.XXXXXXXXXXX
+    X........XXXXXXX.......XXXXXXXXX
+    X........X........XXX...........
+    X........X........XX.XXXXXXXXXXX
     X........X......XXXX.......X....
     X........X......X..........X....
     X........X......X...XXXX...X...X
