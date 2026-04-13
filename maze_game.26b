@@ -1129,7 +1129,7 @@ _room_top_right
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.X
     .............................X.X
     XXXXXXXXXXXXXXXXXXXXXXXXXXX..X.X
-    ....................XXXXXXX..X.X
+    .......................X.....X.X
     XXXXXXXXXXXXXXXXXXXXXXXXXXX..X.X
     .............................X.X
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.X
@@ -1161,7 +1161,7 @@ _room_top_left
     X........XXXXXXX.......XXXXXXXXX
     X........X........XXX...........
     X........X........XX.XXXXXXXXXXX
-    X........X......XXXX.......X....
+    X........X......XXXX.XXXXXXX....
     X........X......X..........X....
     X........X......X...XXXX...X...X
     X........X......X...X..........X
