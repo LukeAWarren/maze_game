@@ -1,5 +1,6 @@
   include div_mul.asm
   set romsize 8k
+  set kernel_options pfcolors
 
   ; room colors
   const BLACK = $00
@@ -667,6 +668,19 @@ _title_screen
     .......X..XX..XXX..XXX..X.......
     .......X..X...X..X.X..X.X.......
     .......X..XXX.X..X.X..X.X.......
+end
+  pfcolors:
+    WHITE
+    GOLD_LIGHT
+    WHITE
+    GOLD_LIGHT
+    WHITE
+    BLACK
+    TEAL_LIGHT
+    GREEN_LIGHT
+    TEAL_LIGHT
+    GREEN_LIGHT
+    TEAL_LIGHT
 end
  title_music_setup_mode = TITLE_MUSIC_SETUP_INIT
  title_melody_phrase = 0
