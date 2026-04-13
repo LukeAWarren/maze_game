@@ -7,7 +7,6 @@
 - Standard compile command: `sh ./build.sh`
 - `build.sh` defaults `bB` to `/Users/luke/opt/batari-Basic` and runs `2600basic.sh`
 - `build.sh` now defaults to `rescue_terri.26b`; passing an explicit source still works
-- `rescue_terri.26b` now uses `set kernel_options pfcolors` for title-screen playfield row colors
 - Current CLI toolchain works in this repo with:
   - batari Basic `v1.9 (c)2025`
   - DASM `2.20.15-SNAPSHOT`
@@ -27,8 +26,8 @@
   - `.cache/includes.bB`
 - If ADS is used directly, it may also refresh files under `bin/`
 - Latest known `rescue_terri.26b` build budget:
-  - `19 bytes of ROM space left in bank 1`
-  - `397 bytes of ROM space left in bank 2`
+  - `31 bytes of ROM space left in bank 1`
+  - `437 bytes of ROM space left in bank 2`
 
 ## Local References
 
@@ -235,7 +234,6 @@ ROOM_BOTTOM_RIGHT TEAL_DARK / TEAL_LIGHT
 
 - **ROM space is tight.** Prefer small, targeted changes. Check `.cache/bB.asm` and `.lst` after building to monitor bank usage.
 - Title music bytes are constrained by bank 1. Bank 2's free space is not directly available for `_Title_Bass`, `_Title_Melody`, or any future `_Title_Melody_3` table unless the playback code is redesigned around bank switching.
-- Title screen row striping uses `pfcolors:` and depends on `set kernel_options pfcolors`; the `pfcolors:` block must end with a bare `end` line
 - When adding a room: update bank 1 boundary routing AND add the room init block in bank 2
 - When adding a room connection: update the boundary check for both rooms involved
 - When changing room geometry: keep `maze.txt` and the matching 32×11 `playfield:` block in sync
