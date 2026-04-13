@@ -708,9 +708,10 @@ _read_title_melody_event
 
 _next_title_melody_phrase
   title_melody_phrase = title_melody_phrase + 1
-  if title_melody_phrase > 11 then title_melody_phrase = 0
+  if title_melody_phrase > 15 then title_melody_phrase = 0
   title_music_setup_mode = TITLE_MUSIC_SETUP_MELODY
-  if title_melody_phrase > 7 then goto _title_melody_3_setup
+  if title_melody_phrase > 11 then goto _title_melody_3_setup
+  if title_melody_phrase > 7 then goto _title_melody_setup
   if title_melody_phrase > 3 then goto _title_melody_2_setup
   goto _title_melody_setup
 
