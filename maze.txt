@@ -1,36 +1,36 @@
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-XXXXXXXXXXXXX              XX                                                                  X
-X               XXXXXXXXX      XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX X
-X        XXXXXXX       XXXXXXXXXX                                                            X X
-X        X        XXX              XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX  X X
-X        X        XX XXXXXXXXXXXXXXX                                                   X     X X
-X        X      XXXX XXXXXXX                    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX  X X
-X        X      X          X                    X                                            X X
-X        X      X   XXXX   X   XX               X  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX X
-X        X      X   X          XX               X  X                                           X
-X        X      X   XXXXXXXXXXXXXXXXXXXXXXXXXX  X  X  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-X        X      X   XXXXXXXXXXXXXXXXXXXXXXXXXX  X  X  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-X        X      X              XX            X  X  X                                           X
-X        XXXX   X                            X  X  X                                A          X
-X        X      X              XXXXXXXXXXXXX X  X  X                                           X
-X        X   XXXXXXXXXXXXXXXXX XX          X X  X  X     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX X
-X        X      X            XXXX          X X  X  X     X                                 C X X
-X        XXXX   X    XXXXXXX               X X  X  XXXXXXX  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX X
-X        X           X     XXXXXXXXX       X X  X           X                                  X
-X        XXXXXXXXXXXXX             X       X X  XXXXXXXXXXXXX                       B    XXXXXXX
-X                              XX  X       X X                                           X  D  X
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX  XX     XX XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX X X X
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX  XX     XX XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX X X X
-X                        X         X      X  X                                X            X X X
-X    XX         XXXXXX   X  XXXXXXX     XX  X  XX  XXXXXXXXXXXXXXXXXXXXXXXXXX X            X X X
-X  XXXXXX       X     XX   X           X   X  X  X  XXXXXXXX        X       X X            X X X
-X X  XX  X     X       XXXX  XXXXXXXXXX   X  X    X        X XXXXXX X XXXXX X X            X X X
-XX        X     X  XXX       X              X      XXXXXXXXX X    X X X   X X              X X X
-XX   <>   X    X     XXXXXXXXXXXXXXXXXXXXXXX             XXX X XX X X X X X XXXXXXXXXXXXXXXX X X
-XX   XX   X    X                                             X XX X   X X X                  X X
-XX  XXXX  X    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX XX XXXXX X XXXXXXXXXXXXXXXXXXXX X
-XX XXXXXX                                                      XX       X                      X
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+████████████████████████████████████████████████████████████████████████████████████████████████
+█████████████              ██                                                                  █
+█               █████████      ███████████████████████████████████████████████████████████████ █
+█        ███████       ██████████                                                            █ █
+█        █        ███              ████████████████████████████████████████████████████████  █ █
+█        █        ██ ███████████████                                                   █     █ █
+█        █      ████ ███████                    ███████████████████████████████████████████  █ █
+█        █      █          █                    █                                            █ █
+█        █      █   ████   █   ██               █  ███████████████████████████████████████████ █
+█        █      █   █          ██               █  █                                           █
+█        █      █   ██████████████████████████  █  █  ██████████████████████████████████████████
+█        █      █   ██████████████████████████  █  █  ██████████████████████████████████████████
+█        █      █              ██            █  █  █                                           █
+█        ████   █                            █  █  █                                A          █
+█        █      █              █████████████ █  █  █                                           █
+█        █   █████████████████ ██          █ █  █  █     █████████████████████████████████████ █
+█        █      █            ████          █ █  █  █     █                                 C █ █
+█        ████   █    ███████               █ █  █  ███████  ██████████████████████████████████ █
+█        █           █     █████████       █ █  █           █                                  █
+█        █████████████             █       █ █  █████████████                       B    ███████
+█                              ██  █       █ █                                           █  D  █
+█████████████████████████████████  ██     ██ █████████████████████████████████████████████ █ █ █
+█████████████████████████████████  ██     ██ █████████████████████████████████████████████ █ █ █
+█                        █         █      █  █                                █            █ █ █
+█    ██         ██████   █  ███████     ██  █  ██  ██████████████████████████ █            █ █ █
+█  ██████       █     ██   █           █   █  █  █  ████████        █       █ █            █ █ █
+█ █  ██  █     █       ████  ██████████   █  █    █        █ ██████ █ █████ █ █            █ █ █
+██        █     █  ███       █              █      █████████ █    █ █ █   █ █              █ █ █
+██   <>   █    █     ███████████████████████             ███ █ ██ █ █ █ █ █ ████████████████ █ █
+██   ██   █    █                                             █ ██ █   █ █ █                  █ █
+██  ████  █    ███████████████████████████████████████████████ ██ █████ █ ████████████████████ █
+██ ██████                                                      ██       █                      █
+████████████████████████████████████████████████████████████████████████████████████████████████
 
 A  - Pink Character
 B  - Blue Character
