@@ -26,7 +26,7 @@
   - `.cache/includes.bB`
 - If ADS is used directly, it may also refresh files under `bin/`
 - Latest known `rescue_terri.26b` build budget:
-  - `13 bytes of ROM space left in bank 1`
+  - `40 bytes of ROM space left in bank 1`
   - `437 bytes of ROM space left in bank 2`
 
 ## Local References
