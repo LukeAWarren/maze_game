@@ -828,9 +828,9 @@ _title_melody_3_setup
   8,4,20
   8
   8,4,19
-  8
+  6
   0,0,0
-  8
+  10
   8,4,19
   8
   0,0,0
@@ -838,9 +838,9 @@ _title_melody_3_setup
   8,4,19
   16
   8,4,23
-  16
+  12
   0,0,0
-  96
+  100
   255
 end
   title_melody_duration = 1
