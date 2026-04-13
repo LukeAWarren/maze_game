@@ -1100,12 +1100,12 @@ _room_bottom
   COLUPF = PURPLE_LIGHT
   playfield:
     X..XX.....XX.XXXXXXXXXXXXXXXXXXX
-    ...X......X..X...X..............
-    XXX.....XX..X..X..X........XXXXX
-    .......X...X..X.X..X.......X....
-    XXXXXXX...X..X...X..X......X.XXX
-    ............X.....X........X.X..
-    XXXXXXXXXXXX.......XXXXXXXXX.X.X
+    ...X......X..X..................
+    XXX.....XX..X..XX..XXXXXXXXXXXXX
+    .......X...X..X..X..XXXXXXXX....
+    XXXXXXX...X..X....X........X.XXX
+    ............X......XXXXXXXXX.X..
+    XXXXXXXXXXXX.............XXX.X.X
     .............................X.X
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.X
     ...............................X
