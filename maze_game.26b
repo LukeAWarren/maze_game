@@ -65,6 +65,7 @@
   dim title_music_setup_mode = s
   dim title_melody_phrase = t
   dim score_frame_counter = y
+  dim easter_egg_found = z
 
   ; initialize the first room
   mi_room_number = 0
@@ -559,12 +560,24 @@ _update_score_timer
   score = score + 1
 _end_score_timer
 
+  if p1_room_number = ROOM_BOTTOM_LEFT && player1x <= TEMPLE_BALL_X && player1x >= TEMPLE_BALL_X - 3 && player1y <= TEMPLE_BALL_Y && player1y >= TEMPLE_BALL_Y - 3 then goto _start_easter_egg
   if p0_room_number = p1_room_number && player1x = player0x && player1y = player0y then goto _start_game_over
 
   COLUP0 = BLUE
   COLUP1 = PINK
   drawscreen
   goto mainloop
+
+_start_easter_egg
+  easter_egg_found = 1
+  bally = OFFSCRN_Y
+  player1:
+    %01100000
+    %11110000
+    %11110000
+    %01100000
+end
+  goto _start_game_over
 
 _start_game_over
   game_over = 1
@@ -671,7 +684,7 @@ _after_title_bass
 
 _read_title_melody_event
   temp4 = sread(_Title_Melody)
-  if temp4 = 255 && game_over then title_music_setup_mode = TITLE_MUSIC_SETUP_MELODY : goto _victory_melody_setup
+  if temp4 = 255 && game_over then title_music_setup_mode = TITLE_MUSIC_SETUP_MELODY : goto _select_game_over_melody
   if temp4 = 255 then goto _next_title_melody_phrase
   temp5 = sread(_Title_Melody)
   temp6 = sread(_Title_Melody)
@@ -768,9 +781,13 @@ _title_bass_setup
   255
 end
   title_bass_duration = 1
-  if title_music_setup_mode = TITLE_MUSIC_SETUP_INIT && game_over then goto _victory_melody_setup
+  if title_music_setup_mode = TITLE_MUSIC_SETUP_INIT && game_over then goto _select_game_over_melody
   if title_music_setup_mode = TITLE_MUSIC_SETUP_INIT then goto _title_melody_setup
   goto _read_title_bass_event
+
+_select_game_over_melody
+  if easter_egg_found then goto _easter_egg_melody_setup
+  goto _victory_melody_setup
 
 _title_melody_setup
   sdata _Title_Melody = w
@@ -815,6 +832,18 @@ end
   title_melody_duration = 1
   goto _read_title_melody_event
 
+_easter_egg_melody_setup
+  sdata _Easter_Egg_Melody = w
+  8,12,17
+  16
+  8,12,20
+  16
+  8,12,26
+  16
+  255
+end
+  goto _game_over_melody_ready
+
 _victory_melody_setup
   sdata _Victory_Melody = w
   8,12,26
@@ -835,6 +864,7 @@ _victory_melody_setup
   8
   255
 end
+_game_over_melody_ready
   title_melody_duration = 1
   if title_music_setup_mode = TITLE_MUSIC_SETUP_INIT then goto _game_over
   goto _read_title_melody_event
@@ -1151,9 +1181,9 @@ _room_bottom_left
   COLUPF = OLIVE_LIGHT
   playfield:
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-    X....XX..................X......
-    X...X..X........XXXXXX...X..XXXX
-    X..X....X.......X.....XX...X....
+    X........................X......
+    X....XX.........XXXXXX...X..XXXX
+    X..XXXXXX.......X.....XX...X....
     X.X..XX..X.....X.......XXXX..XXX
     XX........X.....X..XXX.......X..
     XX........X....X.....XXXXXXXXXXX
