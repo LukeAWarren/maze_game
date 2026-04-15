@@ -425,7 +425,7 @@ _begin_boundary_check
 
 _end_boundary_check
 
-  if mi_room_number = ROOM_BOTTOM_LEFT then bally = TEMPLE_BALL_Y else bally = OFFSCRN_Y
+  if mi_room_number = ROOM_BOTTOM_LEFT && !easter_egg_found then bally = TEMPLE_BALL_Y else bally = OFFSCRN_Y
 
 _begin_p0_logic
   if p0_room_number = mi_room_number && player0y = OFFSCRN_Y then goto _restore_pos_p0
@@ -568,7 +568,7 @@ _update_score_timer
   score = score + 1
 _end_score_timer
 
-  if p1_room_number = ROOM_BOTTOM_LEFT && player1x <= TEMPLE_BALL_X && player1x >= TEMPLE_BALL_X - 3 && player1y <= TEMPLE_BALL_Y && player1y >= TEMPLE_BALL_Y - 3 then goto _start_easter_egg
+  if !easter_egg_found && p1_room_number = ROOM_BOTTOM_LEFT && player1x <= TEMPLE_BALL_X && player1x >= TEMPLE_BALL_X - 3 && player1y <= TEMPLE_BALL_Y && player1y >= TEMPLE_BALL_Y - 3 then goto _start_easter_egg
   if p0_room_number = p1_room_number && player1x = HOUSE_ENTRY_X && player1y = HOUSE_ENTRY_Y then goto _start_game_over
 
   COLUP0 = BLUE
@@ -601,19 +601,12 @@ _game_over
   if color_cycle > 8 then color_cycle = 0
 
 _game_over_colors
-  if color_cycle = 0 then COLUBK = BLACK : COLUPF = WHITE
-  if color_cycle = 1 then COLUBK = GRAY_DARK : COLUPF = GRAY_LIGHT
-  if color_cycle = 2 then COLUBK = GREEN_DARK : COLUPF = GREEN_LIGHT
-  if color_cycle = 3 then COLUBK = ORANGE_DARK : COLUPF = ORANGE_LIGHT
-  if color_cycle = 4 then COLUBK = PURPLE_DARK : COLUPF = PURPLE_LIGHT
-  if color_cycle = 5 then COLUBK = GOLD_DARK : COLUPF = GOLD_LIGHT
-  if color_cycle = 6 then COLUBK = BRICK_DARK : COLUPF = BRICK_LIGHT
-  if color_cycle = 7 then COLUBK = OLIVE_DARK : COLUPF = OLIVE_LIGHT
-  if color_cycle = 8 then COLUBK = TEAL_DARK : COLUPF = TEAL_LIGHT
   COLUP0 = BLUE
   COLUP1 = PINK
-  goto _title_music_loop
+  goto _show_game_over_colors bank2
 _after_victory_music
+  if easter_egg_found && joy0fire then goto _resume_after_easter_egg bank2
+  if easter_egg_found && joy1fire then goto _resume_after_easter_egg bank2
   drawscreen
   goto mainloop
 
@@ -945,9 +938,74 @@ _skip_room_bottom_right_boundary_check
 
  bank 2
 
+  dim color_return_mode = temp1
   dim p1_gate_transfer = temp1
 
   ; Room playfields are 32 columns by 11 rows. X = wall, . = open floor.
+
+_resume_after_easter_egg
+  AUDV0 = 0 : AUDV1 = 0
+  game_over = 0
+  color_cycle = 0
+  color_cycle_timer = 0
+  color_return_mode = 0
+  on mi_room_number goto _resume_invalid_room _color_right _color_middle _color_left _color_top _color_bottom _color_top_right _color_top_left _color_bottom_left _color_bottom_right
+
+_resume_invalid_room
+  goto _end_boundary_check bank1
+
+_show_game_over_colors
+  color_return_mode = 1
+  on color_cycle goto _color_right _color_left _color_top _color_middle _color_bottom _color_top_right _color_top_left _color_bottom_left _color_bottom_right
+
+_color_right
+  COLUBK = BLACK
+  COLUPF = WHITE
+  goto _return_from_color_helper
+
+_color_middle
+  COLUBK = ORANGE_DARK
+  COLUPF = ORANGE_LIGHT
+  goto _return_from_color_helper
+
+_color_left
+  COLUBK = GRAY_DARK
+  COLUPF = GRAY_LIGHT
+  goto _return_from_color_helper
+
+_color_top
+  COLUBK = GREEN_DARK
+  COLUPF = GREEN_LIGHT
+  goto _return_from_color_helper
+
+_color_bottom
+  COLUBK = PURPLE_DARK
+  COLUPF = PURPLE_LIGHT
+  goto _return_from_color_helper
+
+_color_top_right
+  COLUBK = GOLD_DARK
+  COLUPF = GOLD_LIGHT
+  goto _return_from_color_helper
+
+_color_top_left
+  COLUBK = BRICK_DARK
+  COLUPF = BRICK_LIGHT
+  goto _return_from_color_helper
+
+_color_bottom_left
+  COLUBK = OLIVE_DARK
+  COLUPF = OLIVE_LIGHT
+  goto _return_from_color_helper
+
+_color_bottom_right
+  COLUBK = TEAL_DARK
+  COLUPF = TEAL_LIGHT
+  goto _return_from_color_helper
+
+_return_from_color_helper
+  if color_return_mode then goto _title_music_loop bank1
+  goto _end_boundary_check bank1
 
 _room_right
   if mi_room_number = ROOM_MIDDLE then missile0x = ENTRY_GATE_LEFT_X
