@@ -1,0 +1,475 @@
+  include div_mul.asm
+  set romsize 32k
+
+  ; V2 draft layout:
+  ; - bank 1 owns input, wall collision, and generic edge detection
+  ; - bank 2 owns the room graph and the room loaders
+  ; - each room loader only paints colors and a playfield
+  ; - a room transition is chosen from (current_room, exit_dir)
+
+  ; room colors
+  const BLACK = $00
+  const WHITE = $0E
+
+  const GRAY_DARK = $04
+  const GRAY_LIGHT = $0C
+
+  const GREEN_DARK = $B4
+  const GREEN_LIGHT = $B8
+
+  const ORANGE_DARK = $24
+  const ORANGE_LIGHT = $28
+
+  const PURPLE_DARK = $54
+  const PURPLE_LIGHT = $58
+
+  const GOLD_DARK = $10
+  const GOLD_LIGHT = $1E
+
+  const BRICK_DARK = $30
+  const BRICK_LIGHT = $3C
+
+  const OLIVE_DARK = $C0
+  const OLIVE_LIGHT = $CE
+
+  const TEAL_DARK = $90
+  const TEAL_LIGHT = $9C
+
+  ; missile colors
+  const PINK = $4A
+  const BLUE = $84
+
+  const ROOM_NONE = 0
+  const ROOM_TOP_LEFT = 1
+  const ROOM_TOP = 2
+  const ROOM_TOP_RIGHT = 3
+  const ROOM_LEFT = 4
+  const ROOM_MIDDLE = 5
+  const ROOM_RIGHT = 6
+  const ROOM_BOTTOM_LEFT = 7
+  const ROOM_BOTTOM = 8
+  const ROOM_BOTTOM_RIGHT = 9
+
+  const DIR_LEFT = 0
+  const DIR_RIGHT = 1
+  const DIR_UP = 2
+  const DIR_DOWN = 3
+
+  ; current room and generic graph state
+  dim current_room = a
+  dim next_room = b
+  dim exit_dir = c
+  dim room_left = d
+  dim room_right = e
+  dim room_up = f
+  dim room_down = g
+
+  ; screen boundaries
+  const SCR_LEFT_X = 18
+  const SCR_RIGHT_X = 142
+  const SCR_TOP_Y = 4
+  const SCR_BOT_Y = 87
+  const OFFSCRN_Y = 200
+
+  ; room entry gates
+  const ENTRY_GATE_LEFT_X = 22
+  const ENTRY_GATE_RIGHT_X = 138
+  const ENTRY_GATE_TOP_Y = 8
+  const ENTRY_GATE_BOT_Y = 79
+
+  ; missile dimensions
+  const MISSLE_WIDTH = 4
+  const MISSLE_HEIGHT = 4
+  const MISSLE_WIDTH_BIN = %00100000
+
+  ; playfield coordinate offsets for pfread
+  const PF_SCR_X_OFFSET = 18
+  const PF_SCR_Y_OFFSET = 3
+
+  ; optimized X collision constants
+  const M_X_LEFT_EDGE = PF_SCR_X_OFFSET + 1
+  const M_X_RIGHT_EDGE = PF_SCR_X_OFFSET - MISSLE_WIDTH + 1
+  const M_X_RIGHT_EDGE_PLUS1 = M_X_RIGHT_EDGE - 1
+
+  ; optimized Y collision constants
+  const M0_Y_TOP_EDGE = PF_SCR_Y_OFFSET + 1
+  const M0_Y_BOTTOM_EDGE = PF_SCR_Y_OFFSET - MISSLE_HEIGHT
+  const M0_Y_BOTTOM_EDGE_MINUS1 = M0_Y_BOTTOM_EDGE + 1
+  const M1_Y_TOP_EDGE = PF_SCR_Y_OFFSET + 2
+  const M1_Y_TOP_EDGE_MINUS1 = PF_SCR_Y_OFFSET + 1
+  const M1_Y_BOTTOM_EDGE_MINUS1 = PF_SCR_Y_OFFSET - MISSLE_HEIGHT + 1
+  const M1_Y_BOTTOM_EDGE_MINUS2 = PF_SCR_Y_OFFSET - MISSLE_HEIGHT + 2
+
+  ; known-safe starting positions from the original right room
+  const START_M0_X = 100
+  const START_M0_Y = 65
+  const START_M1_X = 100
+  const START_M1_Y = 25
+
+  COLUP0 = BLUE
+  COLUP1 = PINK
+  missile0height = MISSLE_HEIGHT - 1
+  missile1height = MISSLE_HEIGHT - 1
+  missile0x = START_M0_X
+  missile0y = START_M0_Y
+  missile1x = START_M1_X
+  missile1y = START_M1_Y
+  NUSIZ0 = MISSLE_WIDTH_BIN
+  NUSIZ1 = MISSLE_WIDTH_BIN
+  CTRLPF = $11
+
+  ; hide the unused objects
+  player0y = OFFSCRN_Y
+  player1y = OFFSCRN_Y
+  bally = OFFSCRN_Y
+  score = 0
+  scorecolor = WHITE
+
+  current_room = ROOM_RIGHT
+  goto _load_current_room bank2
+
+mainloop
+  if switchreset then reboot
+
+  NUSIZ0 = MISSLE_WIDTH_BIN
+  NUSIZ1 = MISSLE_WIDTH_BIN
+
+  dim coll_detect_x = temp3
+  dim coll_detect_y = temp4
+
+_j0_up
+  if !joy0up then goto _j0_down
+  if missile0y <= SCR_TOP_Y then goto _j0_down
+  coll_detect_y = ((missile0y - M0_Y_TOP_EDGE) / 8)
+  coll_detect_x = ((missile0x - PF_SCR_X_OFFSET) / 4)
+  if pfread(coll_detect_x, coll_detect_y) then goto _j0_down
+  coll_detect_x = ((missile0x - M_X_RIGHT_EDGE) / 4)
+  if pfread(coll_detect_x, coll_detect_y) then goto _j0_down
+  missile0y = missile0y - 1
+
+_j0_down
+  if !joy0down then goto _j0_left
+  if missile0y >= SCR_BOT_Y then goto _j0_left
+  coll_detect_y = ((missile0y - M0_Y_BOTTOM_EDGE) / 8)
+  coll_detect_x = ((missile0x - M_X_RIGHT_EDGE) / 4)
+  if pfread(coll_detect_x, coll_detect_y) then goto _j0_left
+  coll_detect_x = ((missile0x - PF_SCR_X_OFFSET) / 4)
+  if pfread(coll_detect_x, coll_detect_y) then goto _j0_left
+  missile0y = missile0y + 1
+
+_j0_left
+  if !joy0left then goto _j0_right
+  if missile0x <= SCR_LEFT_X then goto _j0_right
+  coll_detect_x = ((missile0x - M_X_LEFT_EDGE) / 4)
+  coll_detect_y = ((missile0y - PF_SCR_Y_OFFSET) / 8)
+  if pfread(coll_detect_x, coll_detect_y) then goto _j0_right
+  coll_detect_y = ((missile0y - M0_Y_BOTTOM_EDGE_MINUS1) / 8)
+  if pfread(coll_detect_x, coll_detect_y) then goto _j0_right
+  missile0x = missile0x - 1
+
+_j0_right
+  if !joy0right then goto _j1_up
+  if missile0x >= SCR_RIGHT_X then goto _j1_up
+  coll_detect_x = ((missile0x - M_X_RIGHT_EDGE_PLUS1) / 4)
+  coll_detect_y = ((missile0y - PF_SCR_Y_OFFSET) / 8)
+  if pfread(coll_detect_x, coll_detect_y) then goto _j1_up
+  coll_detect_y = ((missile0y - M0_Y_BOTTOM_EDGE_MINUS1) / 8)
+  if pfread(coll_detect_x, coll_detect_y) then goto _j1_up
+  missile0x = missile0x + 1
+
+_j1_up
+  if !joy1up then goto _j1_down
+  if missile1y <= SCR_TOP_Y then goto _j1_down
+  coll_detect_y = ((missile1y - M1_Y_TOP_EDGE) / 8)
+  coll_detect_x = ((missile1x - PF_SCR_X_OFFSET) / 4)
+  if pfread(coll_detect_x, coll_detect_y) then goto _j1_down
+  coll_detect_x = ((missile1x - M_X_RIGHT_EDGE) / 4)
+  if pfread(coll_detect_x, coll_detect_y) then goto _j1_down
+  missile1y = missile1y - 1
+
+_j1_down
+  if !joy1down then goto _j1_left
+  if missile1y >= SCR_BOT_Y then goto _j1_left
+  coll_detect_y = ((missile1y - M1_Y_BOTTOM_EDGE_MINUS1) / 8)
+  coll_detect_x = ((missile1x - M_X_RIGHT_EDGE) / 4)
+  if pfread(coll_detect_x, coll_detect_y) then goto _j1_left
+  coll_detect_x = ((missile1x - PF_SCR_X_OFFSET) / 4)
+  if pfread(coll_detect_x, coll_detect_y) then goto _j1_left
+  missile1y = missile1y + 1
+
+_j1_left
+  if !joy1left then goto _j1_right
+  if missile1x <= SCR_LEFT_X then goto _j1_right
+  coll_detect_x = ((missile1x - M_X_LEFT_EDGE) / 4)
+  coll_detect_y = ((missile1y - M1_Y_TOP_EDGE_MINUS1) / 8)
+  if pfread(coll_detect_x, coll_detect_y) then goto _j1_right
+  coll_detect_y = ((missile1y - M1_Y_BOTTOM_EDGE_MINUS2) / 8)
+  if pfread(coll_detect_x, coll_detect_y) then goto _j1_right
+  missile1x = missile1x - 1
+
+_j1_right
+  if !joy1right then goto _check_left_exit
+  if missile1x >= SCR_RIGHT_X then goto _check_left_exit
+  coll_detect_x = ((missile1x - M_X_RIGHT_EDGE_PLUS1) / 4)
+  coll_detect_y = ((missile1y - M1_Y_TOP_EDGE_MINUS1) / 8)
+  if pfread(coll_detect_x, coll_detect_y) then goto _check_left_exit
+  coll_detect_y = ((missile1y - M1_Y_BOTTOM_EDGE_MINUS2) / 8)
+  if pfread(coll_detect_x, coll_detect_y) then goto _check_left_exit
+  missile1x = missile1x + 1
+
+_check_left_exit
+  if missile0x <= SCR_LEFT_X && missile1x <= SCR_LEFT_X then exit_dir = DIR_LEFT : goto _try_transition bank2
+
+_check_right_exit
+  if missile0x >= SCR_RIGHT_X && missile1x >= SCR_RIGHT_X then exit_dir = DIR_RIGHT : goto _try_transition bank2
+
+_check_up_exit
+  if missile0y <= SCR_TOP_Y && missile1y <= SCR_TOP_Y then exit_dir = DIR_UP : goto _try_transition bank2
+
+_check_down_exit
+  if missile0y >= SCR_BOT_Y && missile1y >= SCR_BOT_Y then exit_dir = DIR_DOWN : goto _try_transition bank2
+
+_draw_frame
+  score = current_room
+  drawscreen
+  goto mainloop
+
+  bank 2
+
+_try_transition
+  room_left = ROOM_NONE : room_right = ROOM_NONE
+  room_up = ROOM_NONE : room_down = ROOM_NONE
+  on current_room goto _graph_invalid _graph_top_left _graph_top _graph_top_right _graph_left _graph_middle _graph_right _graph_bottom_left _graph_bottom _graph_bottom_right
+
+_graph_invalid
+  goto _load_middle
+
+_graph_top_left
+  room_right = ROOM_TOP
+  room_down = ROOM_LEFT
+  goto _resolve_transition
+
+_graph_top
+  room_left = ROOM_TOP_LEFT
+  room_right = ROOM_TOP_RIGHT
+  room_down = ROOM_MIDDLE
+  goto _resolve_transition
+
+_graph_top_right
+  room_left = ROOM_TOP
+  goto _resolve_transition
+
+_graph_left
+  room_right = ROOM_MIDDLE
+  room_up = ROOM_TOP_LEFT
+  goto _resolve_transition
+
+_graph_middle
+  room_left = ROOM_LEFT
+  room_right = ROOM_RIGHT
+  room_up = ROOM_TOP
+  room_down = ROOM_BOTTOM
+  goto _resolve_transition
+
+_graph_right
+  room_left = ROOM_MIDDLE
+  room_down = ROOM_BOTTOM_RIGHT
+  goto _resolve_transition
+
+_graph_bottom_left
+  room_right = ROOM_BOTTOM
+  goto _resolve_transition
+
+_graph_bottom
+  room_left = ROOM_BOTTOM_LEFT
+  room_right = ROOM_BOTTOM_RIGHT
+  room_up = ROOM_MIDDLE
+  goto _resolve_transition
+
+_graph_bottom_right
+  room_left = ROOM_BOTTOM
+  room_up = ROOM_RIGHT
+
+_resolve_transition
+  next_room = ROOM_NONE
+  if exit_dir = DIR_LEFT then next_room = room_left
+  if exit_dir = DIR_RIGHT then next_room = room_right
+  if exit_dir = DIR_UP then next_room = room_up
+  if exit_dir = DIR_DOWN then next_room = room_down
+  if !next_room then goto _draw_frame bank1
+
+  if exit_dir = DIR_LEFT then missile0x = ENTRY_GATE_RIGHT_X : missile1x = ENTRY_GATE_RIGHT_X
+  if exit_dir = DIR_RIGHT then missile0x = ENTRY_GATE_LEFT_X : missile1x = ENTRY_GATE_LEFT_X
+  if exit_dir = DIR_UP then missile0y = ENTRY_GATE_BOT_Y : missile1y = ENTRY_GATE_BOT_Y
+  if exit_dir = DIR_DOWN then missile0y = ENTRY_GATE_TOP_Y : missile1y = ENTRY_GATE_TOP_Y
+
+  current_room = next_room
+
+_load_current_room
+  on current_room goto _load_invalid _load_top_left _load_top _load_top_right _load_left _load_middle _load_right _load_bottom_left _load_bottom _load_bottom_right
+
+_load_invalid
+  current_room = ROOM_MIDDLE
+  goto _load_middle
+
+_load_top_left
+  COLUBK = BRICK_DARK
+  COLUPF = BRICK_LIGHT
+  playfield:
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    XXXXXXXXXXXXX..............XX...
+    X...............XXXXXXXXX......X
+    X........XXXXXXX.......XXXXXXXXX
+    X........X........XXX...........
+    X........X........XX.XXXXXXXXXXX
+    X........X......XXXX.XXXXXXX....
+    X........X......X..........X....
+    X........X......X...XXXX...X...X
+    X........X......X...X..........X
+    X........X......X...XXXXXXXXXXXX
+end
+  goto _draw_frame bank1
+
+_load_top
+  COLUBK = GREEN_DARK
+  COLUPF = GREEN_LIGHT
+  playfield:
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    ................................
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    X...............................
+    ...XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    XXXX............................
+    ................XXXXXXXXXXXXXXXX
+    ................X...............
+    X...............X..XXXXXXXXXXXXX
+    X...............X..X............
+    XXXXXXXXXXXXXX..X..X..XXXXXXXXXX
+end
+  goto _draw_frame bank1
+
+_load_top_right
+  COLUBK = GOLD_DARK
+  COLUPF = GOLD_LIGHT
+  playfield:
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    ...............................X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.X
+    .............................X.X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXX..X.X
+    .......................X.....X.X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXX..X.X
+    .............................X.X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.X
+    ...............................X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+end
+  goto _draw_frame bank1
+
+_load_left
+  COLUBK = GRAY_DARK
+  COLUPF = GRAY_LIGHT
+  playfield:
+    X........X......X...XXXXXXXXXXXX
+    X........X......X..............X
+    X........XXXX...X...............
+    X........X......X..............X
+    X........X...XXXXXXXXXXXXXXXXX.X
+    X........X......X............XXX
+    X........XXXX...X....XXXXXXX....
+    X........X...........X.....XXXXX
+    X........XXXXXXXXXXXXX..........
+    X..............................X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+end
+  goto _draw_frame bank1
+
+_load_middle
+  COLUBK = ORANGE_DARK
+  COLUPF = ORANGE_LIGHT
+  playfield:
+    XXXXXXXXXXXXXX..X..X..XXXXXXXXXX
+    X............X..X..X............
+    .............X..X..X............
+    XXXXXXXXXXXX.X..X..X............
+    X..........X.X..X..X.....XXXXXXX
+    X..........X.X..X..X.....X......
+    ...........X.X..X..XXXXXXX..XXXX
+    XXXX.......X.X..X...........X...
+    ...X.......X.X..XXXXXXXXXXXXX...
+    X..X.......X.X..................
+    X..XX.....XX.XXXXXXXXXXXXXXXXXXX
+end
+  goto _draw_frame bank1
+
+_load_right
+  COLUBK = BLACK
+  COLUPF = WHITE
+  playfield:
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    ...............................X
+    ...............................X
+    ...............................X
+    XXXXXXXXXXXXXXXXXXXXXXXX.......X
+    .......................X.......X
+    XXXXXXXXXXXXXXXXXXXXXXXX.......X
+    .........................XXXXXXX
+    .........................X.....X
+    .........................X.....X
+    XXXXXXXXXXXXXXXXXXXXXXXXXX.X.X.X
+end
+  goto _draw_frame bank1
+
+_load_bottom_left
+  COLUBK = OLIVE_DARK
+  COLUPF = OLIVE_LIGHT
+  playfield:
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    X........................X......
+    X....XX.........XXXXXX...X..XXXX
+    X..XXXXXX.......X.....XX...X....
+    X.X..XX..X.....X.......XXXX..XXX
+    XX........X.....X..XXX.......X..
+    XX........X....X.....XXXXXXXXXXX
+    XX...XX...X....X................
+    XX..XXXX..X....XXXXXXXXXXXXXXXXX
+    XX.XXXXXX.......................
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+end
+  goto _draw_frame bank1
+
+_load_bottom
+  COLUBK = PURPLE_DARK
+  COLUPF = PURPLE_LIGHT
+  playfield:
+    X..XX.....XX.XXXXXXXXXXXXXXXXXXX
+    ...X......X..X..................
+    XXX.....XX..X..XX..XXXXXXXXXXXXX
+    .......X...X..X..X..XXXXXXXX....
+    XXXXXXX...X..X....X........X.XXX
+    ............X......XXXXXXXXX.X..
+    XXXXXXXXXXXX.............XXX.X.X
+    .............................X.X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.X
+    ...............................X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+end
+  goto _draw_frame bank1
+
+_load_bottom_right
+  COLUBK = TEAL_DARK
+  COLUPF = TEAL_LIGHT
+  playfield:
+    XXXXXXXXXXXXXXXXXXXXXXXXXX.X.X.X
+    ..............X............X.X.X
+    XXXXXXXXXXXXX.X............X.X.X
+    ....X.......X.X............X.X.X
+    XXX.X.XXXXX.X.X............X.X.X
+    ..X.X.X...X.X..............X.X.X
+    X.X.X.X.X.X.XXXXXXXXXXXXXXXX.X.X
+    X.X...X.X.X..................X.X
+    X.XXXXX.X.XXXXXXXXXXXXXXXXXXXX.X
+    X.......X......................X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+end
+  goto _draw_frame bank1
