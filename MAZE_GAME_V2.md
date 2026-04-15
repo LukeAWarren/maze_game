@@ -58,6 +58,17 @@ room transitions. This document is the design target for the fuller game.
   - hidden rooms
   - puzzle-gated progress
 
+### 2a. Meaningful Room Names
+
+- Room names should eventually be based on a room's identity, theme, or landmark,
+  not just its physical location in the graph.
+- Temporary names like `TOP_LEFT`, `MIDDLE`, and `BOTTOM_RIGHT` are useful during
+  prototyping, but they should not be the long-term naming scheme.
+- A likely direction is to name rooms after places visited with Mom while going to
+  see Aunt Terri in Terre Haute.
+- The graph/data model should support renaming rooms without needing the names to
+  encode their map position.
+
 ### 3. Longer Songs
 
 - `v2` should support much longer songs than the original game.
@@ -215,6 +226,7 @@ Each room should eventually be described by data, not mostly by custom code.
 Minimum room data:
 
 - room id
+- room name / landmark name
 - left destination
 - right destination
 - up destination
@@ -292,4 +304,3 @@ The first meaningful milestone should include:
 - at least one obstacle puzzle
 - a visible destination house
 - one longer music track
-

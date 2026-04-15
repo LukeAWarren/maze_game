@@ -1,9 +1,10 @@
   include div_mul.asm
-  set romsize 32k
+  set romsize 32kSC
 
   ; V2 draft layout:
-  ; - bank 1 owns input, wall collision, and generic edge detection
-  ; - bank 2 owns the room graph and the room loaders
+  ; - bank 1 owns input, wall collision, generic edge detection, and frame orchestration
+  ; - bank 4 owns the room graph and the room loaders
+  ; - bank 3 owns the music player and song data
   ; - each room loader only paints colors and a playfield
   ; - a room transition is chosen from (current_room, exit_dir)
 
@@ -39,6 +40,10 @@
   const PINK = $4A
   const BLUE = $84
 
+  ; room ids intentionally follow the visual maze layout:
+  ;   1 2 3
+  ;   4 5 6
+  ;   7 8 9
   const ROOM_NONE = 0
   const ROOM_TOP_LEFT = 1
   const ROOM_TOP = 2
@@ -54,6 +59,15 @@
   const DIR_RIGHT = 1
   const DIR_UP = 2
   const DIR_DOWN = 3
+  const TITLE_MUSIC_SETUP_INIT = 0
+  const TITLE_MUSIC_SETUP_MELODY = 1
+  const TITLE_MUSIC_SETUP_BASS = 2
+  const SC_AUDIO_MUSIC_GAME_OVER = 0
+  const SC_AUDIO_TITLE_BASS_DURATION = 1
+  const SC_AUDIO_TITLE_MELODY_DURATION = 2
+  const SC_AUDIO_TITLE_SETUP_MODE = 3
+  const SC_AUDIO_TITLE_MELODY_PHRASE = 4
+  const SC_AUDIO_MUSIC_SECRET_MELODY = 5
 
   ; current room and generic graph state
   dim current_room = a
@@ -63,6 +77,8 @@
   dim room_right = e
   dim room_up = f
   dim room_down = g
+  ; music control state lives in Superchip RAM; sdata still uses u/v and w/x
+  ; for the active bass and melody stream pointers in standard RAM
 
   ; screen boundaries
   const SCR_LEFT_X = 18
@@ -124,9 +140,13 @@
   bally = OFFSCRN_Y
   score = 0
   scorecolor = WHITE
+  w000[SC_AUDIO_MUSIC_GAME_OVER] = 0
+  w000[SC_AUDIO_MUSIC_SECRET_MELODY] = 0
+  AUDV0 = 0 : AUDV1 = 0
+  gosub _music_init_title bank3
 
   current_room = ROOM_RIGHT
-  goto _load_current_room bank2
+  goto _load_current_room bank4
 
 mainloop
   if switchreset then reboot
@@ -218,25 +238,302 @@ _j1_right
   missile1x = missile1x + 1
 
 _check_left_exit
-  if missile0x <= SCR_LEFT_X && missile1x <= SCR_LEFT_X then exit_dir = DIR_LEFT : goto _try_transition bank2
+  if missile0x <= SCR_LEFT_X && missile1x <= SCR_LEFT_X then exit_dir = DIR_LEFT : goto _try_transition bank4
 
 _check_right_exit
-  if missile0x >= SCR_RIGHT_X && missile1x >= SCR_RIGHT_X then exit_dir = DIR_RIGHT : goto _try_transition bank2
+  if missile0x >= SCR_RIGHT_X && missile1x >= SCR_RIGHT_X then exit_dir = DIR_RIGHT : goto _try_transition bank4
 
 _check_up_exit
-  if missile0y <= SCR_TOP_Y && missile1y <= SCR_TOP_Y then exit_dir = DIR_UP : goto _try_transition bank2
+  if missile0y <= SCR_TOP_Y && missile1y <= SCR_TOP_Y then exit_dir = DIR_UP : goto _try_transition bank4
 
 _check_down_exit
-  if missile0y >= SCR_BOT_Y && missile1y >= SCR_BOT_Y then exit_dir = DIR_DOWN : goto _try_transition bank2
+  if missile0y >= SCR_BOT_Y && missile1y >= SCR_BOT_Y then exit_dir = DIR_DOWN : goto _try_transition bank4
 
 _draw_frame
   score = current_room
+  gosub _music_tick bank3
   drawscreen
   goto mainloop
 
   bank 2
+  ; reserved for future shared room metadata/helpers
+
+  bank 3
+
+_music_init_title
+  w000[SC_AUDIO_MUSIC_GAME_OVER] = 0
+  w000[SC_AUDIO_MUSIC_SECRET_MELODY] = 0
+  w000[SC_AUDIO_TITLE_SETUP_MODE] = TITLE_MUSIC_SETUP_INIT
+  w000[SC_AUDIO_TITLE_MELODY_PHRASE] = 0
+  goto _music_title_bass_setup
+
+_music_start_victory
+  w000[SC_AUDIO_MUSIC_GAME_OVER] = 1
+  w000[SC_AUDIO_MUSIC_SECRET_MELODY] = 0
+  w000[SC_AUDIO_TITLE_SETUP_MODE] = TITLE_MUSIC_SETUP_INIT
+  goto _music_title_bass_setup
+
+_music_start_secret_victory
+  w000[SC_AUDIO_MUSIC_GAME_OVER] = 1
+  w000[SC_AUDIO_MUSIC_SECRET_MELODY] = 1
+  w000[SC_AUDIO_TITLE_SETUP_MODE] = TITLE_MUSIC_SETUP_INIT
+  goto _music_title_bass_setup
+
+_music_tick
+  w000[SC_AUDIO_TITLE_BASS_DURATION] = r000[SC_AUDIO_TITLE_BASS_DURATION] - 1
+  if r000[SC_AUDIO_TITLE_BASS_DURATION] then goto _music_after_title_bass
+
+_music_read_title_bass_event
+  temp4 = sread(_Title_Bass)
+  if temp4 = 255 then w000[SC_AUDIO_TITLE_SETUP_MODE] = TITLE_MUSIC_SETUP_BASS : goto _music_title_bass_setup
+  temp5 = sread(_Title_Bass)
+  temp6 = sread(_Title_Bass)
+  AUDV1 = temp4
+  AUDC1 = temp5
+  AUDF1 = temp6
+  w000[SC_AUDIO_TITLE_BASS_DURATION] = sread(_Title_Bass)
+  goto _music_after_title_bass
+
+_music_after_title_bass
+  w000[SC_AUDIO_TITLE_MELODY_DURATION] = r000[SC_AUDIO_TITLE_MELODY_DURATION] - 1
+  if r000[SC_AUDIO_TITLE_MELODY_DURATION] then return
+
+_music_read_title_melody_event
+  temp4 = sread(_Title_Melody)
+  if temp4 = 255 && r000[SC_AUDIO_MUSIC_GAME_OVER] then w000[SC_AUDIO_TITLE_SETUP_MODE] = TITLE_MUSIC_SETUP_MELODY : goto _music_select_game_over_melody
+  if temp4 = 255 then goto _music_next_title_melody_phrase
+  temp5 = sread(_Title_Melody)
+  temp6 = sread(_Title_Melody)
+  AUDV0 = temp4
+  AUDC0 = temp5
+  AUDF0 = temp6
+  w000[SC_AUDIO_TITLE_MELODY_DURATION] = sread(_Title_Melody)
+  return
+
+_music_next_title_melody_phrase
+  w000[SC_AUDIO_TITLE_MELODY_PHRASE] = r000[SC_AUDIO_TITLE_MELODY_PHRASE] + 1
+  if r000[SC_AUDIO_TITLE_MELODY_PHRASE] > 15 then w000[SC_AUDIO_TITLE_MELODY_PHRASE] = 0
+  w000[SC_AUDIO_TITLE_SETUP_MODE] = TITLE_MUSIC_SETUP_MELODY
+  if r000[SC_AUDIO_TITLE_MELODY_PHRASE] > 11 then goto _music_title_melody_3_setup
+  if r000[SC_AUDIO_TITLE_MELODY_PHRASE] > 7 then goto _music_title_melody_setup
+  if r000[SC_AUDIO_TITLE_MELODY_PHRASE] > 3 then goto _music_title_melody_2_setup
+  goto _music_title_melody_setup
+
+_music_title_bass_setup
+  sdata _Title_Bass = u
+  ; Bass uses full events so volume, tone, pitch, and duration can vary
+  ; independently, just like the melody stream.
+  ; G
+  8,12,26
+  28
+  0,0,0
+  4
+  8,12,17
+  28
+  0,0,0
+  4
+  8,12,26
+  28
+  0,0,0
+  4
+  8,12,17
+  28
+  0,0,0
+  4
+  ; C
+  8,12,19
+  28
+  0,0,0
+  4
+  8,12,26
+  28
+  0,0,0
+  4
+  8,12,19
+  28
+  0,0,0
+  4
+  8,12,26
+  28
+  0,0,0
+  4
+  ; G
+  8,12,26
+  28
+  0,0,0
+  4
+  8,12,17
+  28
+  0,0,0
+  4
+  8,12,26
+  28
+  0,0,0
+  4
+  8,12,17
+  28
+  0,0,0
+  4
+  ; C
+  8,12,17
+  28
+  0,0,0
+  4
+  8,12,23
+  28
+  0,0,0
+  4
+  8,12,17
+  28
+  0,0,0
+  4
+  8,12,23
+  28
+  0,0,0
+  4
+  255
+end
+  AUDV1 = 0
+  w000[SC_AUDIO_TITLE_BASS_DURATION] = 1
+  if r000[SC_AUDIO_TITLE_SETUP_MODE] = TITLE_MUSIC_SETUP_INIT && r000[SC_AUDIO_MUSIC_GAME_OVER] then goto _music_select_game_over_melody
+  if r000[SC_AUDIO_TITLE_SETUP_MODE] = TITLE_MUSIC_SETUP_INIT then goto _music_title_melody_setup
+  goto _music_read_title_bass_event
+
+_music_select_game_over_melody
+  if r000[SC_AUDIO_MUSIC_SECRET_MELODY] then goto _music_easter_egg_melody_setup
+  goto _music_victory_melody_setup
+
+_music_title_melody_setup
+  sdata _Title_Melody = w
+  8,4,19
+  16
+  8,4,26
+  16
+  8,4,31
+  16
+  8,4,26
+  16
+  8,4,29
+  16
+  8,4,26
+  16
+  8,4,31
+  32
+  255
+end
+  w000[SC_AUDIO_TITLE_MELODY_DURATION] = 1
+  if r000[SC_AUDIO_TITLE_SETUP_MODE] = TITLE_MUSIC_SETUP_INIT then return
+  goto _music_read_title_melody_event
+
+_music_title_melody_2_setup
+  sdata _Title_Melody_2 = w
+  8,4,19
+  16
+  8,4,20
+  16
+  8,4,19
+  16
+  8,4,17
+  16
+  8,4,15
+  16
+  8,4,23
+  16
+  8,4,26
+  32
+  255
+end
+  w000[SC_AUDIO_TITLE_MELODY_DURATION] = 1
+  goto _music_read_title_melody_event
+
+_music_title_melody_3_setup
+  sdata _Title_Melody_3 = w
+  8,4,19
+  16
+  8,4,26
+  8
+  0,0,0
+  56
+  8,4,19
+  8
+  8,4,20
+  8
+  8,4,19
+  6
+  0,0,0
+  10
+  8,4,19
+  4
+  0,0,0
+  12
+  8,4,19
+  16
+  8,4,23
+  9
+  0,0,0
+  103
+  255
+end
+  w000[SC_AUDIO_TITLE_MELODY_DURATION] = 1
+  goto _music_read_title_melody_event
+
+_music_easter_egg_melody_setup
+  sdata _Easter_Egg_Melody = w
+  8,12,17
+  16
+  8,12,20
+  16
+  8,12,26
+  16
+  255
+end
+  goto _music_game_over_melody_ready
+
+_music_victory_melody_setup
+  sdata _Victory_Melody = w
+  8,12,26
+  8
+  8,12,23
+  8
+  8,12,20
+  8
+  8,12,19
+  8
+  8,12,17
+  8
+  8,12,15
+  8
+  8,4,20
+  8
+  8,4,19
+  8
+  255
+end
+_music_game_over_melody_ready
+  w000[SC_AUDIO_TITLE_MELODY_DURATION] = 1
+  if r000[SC_AUDIO_TITLE_SETUP_MODE] = TITLE_MUSIC_SETUP_INIT then return
+  goto _music_read_title_melody_event
+
+  bank 4
 
 _try_transition
+  ; room graph, laid out like the maze:
+  ;   [1] TOP_LEFT ---- [2] TOP ---- [3] TOP_RIGHT
+  ;       |                 |
+  ;   [4] LEFT -------- [5] MIDDLE --- [6] RIGHT
+  ;                         |             |
+  ;   [7] BOTTOM_LEFT - [8] BOTTOM --- [9] BOTTOM_RIGHT
+  ;
+  ; [L, R, U, D] by room:
+  ;   TOP_LEFT      = -, TOP, -, LEFT
+  ;   TOP           = TOP_LEFT, TOP_RIGHT, -, MIDDLE
+  ;   TOP_RIGHT     = TOP, -, -, -
+  ;   LEFT          = -, MIDDLE, TOP_LEFT, -
+  ;   MIDDLE        = LEFT, RIGHT, TOP, BOTTOM
+  ;   RIGHT         = MIDDLE, -, -, BOTTOM_RIGHT
+  ;   BOTTOM_LEFT   = -, BOTTOM, -, -
+  ;   BOTTOM        = BOTTOM_LEFT, BOTTOM_RIGHT, MIDDLE, -
+  ;   BOTTOM_RIGHT  = BOTTOM, -, RIGHT, -
   room_left = ROOM_NONE : room_right = ROOM_NONE
   room_up = ROOM_NONE : room_down = ROOM_NONE
   on current_room goto _graph_invalid _graph_top_left _graph_top _graph_top_right _graph_left _graph_middle _graph_right _graph_bottom_left _graph_bottom _graph_bottom_right
@@ -245,26 +542,31 @@ _graph_invalid
   goto _load_middle
 
 _graph_top_left
+  ; [L, R, U, D] = -, TOP, -, LEFT
   room_right = ROOM_TOP
   room_down = ROOM_LEFT
   goto _resolve_transition
 
 _graph_top
+  ; [L, R, U, D] = TOP_LEFT, TOP_RIGHT, -, MIDDLE
   room_left = ROOM_TOP_LEFT
   room_right = ROOM_TOP_RIGHT
   room_down = ROOM_MIDDLE
   goto _resolve_transition
 
 _graph_top_right
+  ; [L, R, U, D] = TOP, -, -, -
   room_left = ROOM_TOP
   goto _resolve_transition
 
 _graph_left
+  ; [L, R, U, D] = -, MIDDLE, TOP_LEFT, -
   room_right = ROOM_MIDDLE
   room_up = ROOM_TOP_LEFT
   goto _resolve_transition
 
 _graph_middle
+  ; [L, R, U, D] = LEFT, RIGHT, TOP, BOTTOM
   room_left = ROOM_LEFT
   room_right = ROOM_RIGHT
   room_up = ROOM_TOP
@@ -272,21 +574,25 @@ _graph_middle
   goto _resolve_transition
 
 _graph_right
+  ; [L, R, U, D] = MIDDLE, -, -, BOTTOM_RIGHT
   room_left = ROOM_MIDDLE
   room_down = ROOM_BOTTOM_RIGHT
   goto _resolve_transition
 
 _graph_bottom_left
+  ; [L, R, U, D] = -, BOTTOM, -, -
   room_right = ROOM_BOTTOM
   goto _resolve_transition
 
 _graph_bottom
+  ; [L, R, U, D] = BOTTOM_LEFT, BOTTOM_RIGHT, MIDDLE, -
   room_left = ROOM_BOTTOM_LEFT
   room_right = ROOM_BOTTOM_RIGHT
   room_up = ROOM_MIDDLE
   goto _resolve_transition
 
 _graph_bottom_right
+  ; [L, R, U, D] = BOTTOM, -, RIGHT, -
   room_left = ROOM_BOTTOM
   room_up = ROOM_RIGHT
 
