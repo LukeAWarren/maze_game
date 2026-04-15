@@ -68,6 +68,7 @@
   const SC_AUDIO_TITLE_SETUP_MODE = 3
   const SC_AUDIO_TITLE_MELODY_PHRASE = 4
   const SC_AUDIO_MUSIC_SECRET_MELODY = 5
+  const SC_AUDIO_TITLE_BASS_PHRASE = 6
 
   ; current room and generic graph state
   dim current_room = a
@@ -265,18 +266,21 @@ _music_init_title
   w000[SC_AUDIO_MUSIC_SECRET_MELODY] = 0
   w000[SC_AUDIO_TITLE_SETUP_MODE] = TITLE_MUSIC_SETUP_INIT
   w000[SC_AUDIO_TITLE_MELODY_PHRASE] = 0
+  w000[SC_AUDIO_TITLE_BASS_PHRASE] = 0
   goto _music_title_bass_setup
 
 _music_start_victory
   w000[SC_AUDIO_MUSIC_GAME_OVER] = 1
   w000[SC_AUDIO_MUSIC_SECRET_MELODY] = 0
   w000[SC_AUDIO_TITLE_SETUP_MODE] = TITLE_MUSIC_SETUP_INIT
+  w000[SC_AUDIO_TITLE_BASS_PHRASE] = 0
   goto _music_title_bass_setup
 
 _music_start_secret_victory
   w000[SC_AUDIO_MUSIC_GAME_OVER] = 1
   w000[SC_AUDIO_MUSIC_SECRET_MELODY] = 1
   w000[SC_AUDIO_TITLE_SETUP_MODE] = TITLE_MUSIC_SETUP_INIT
+  w000[SC_AUDIO_TITLE_BASS_PHRASE] = 0
   goto _music_title_bass_setup
 
 _music_tick
@@ -285,7 +289,7 @@ _music_tick
 
 _music_read_title_bass_event
   temp4 = sread(_Title_Bass)
-  if temp4 = 255 then w000[SC_AUDIO_TITLE_SETUP_MODE] = TITLE_MUSIC_SETUP_BASS : goto _music_title_bass_setup
+  if temp4 = 255 then w000[SC_AUDIO_TITLE_SETUP_MODE] = TITLE_MUSIC_SETUP_BASS : goto _music_next_title_bass_phrase
   temp5 = sread(_Title_Bass)
   temp6 = sread(_Title_Bass)
   AUDV1 = temp4
@@ -293,6 +297,22 @@ _music_read_title_bass_event
   AUDF1 = temp6
   w000[SC_AUDIO_TITLE_BASS_DURATION] = sread(_Title_Bass)
   goto _music_after_title_bass
+
+_music_next_title_bass_phrase
+  if r000[SC_AUDIO_TITLE_BASS_PHRASE] then goto _music_title_bass_main_phrase_setup
+  if r000[SC_AUDIO_MUSIC_GAME_OVER] then goto _music_title_bass_setup
+  if r000[SC_AUDIO_TITLE_MELODY_DURATION] <> 1 then goto _music_title_bass_setup
+  if r000[SC_AUDIO_TITLE_MELODY_PHRASE] = 7 then goto _music_title_bass_turn_around_phrase_setup
+  if r000[SC_AUDIO_TITLE_MELODY_PHRASE] = 13 then goto _music_title_bass_turn_around_phrase_setup
+  goto _music_title_bass_setup
+
+_music_title_bass_turn_around_phrase_setup
+  w000[SC_AUDIO_TITLE_BASS_PHRASE] = 1
+  goto _music_title_bass_turn_around_setup
+
+_music_title_bass_main_phrase_setup
+  w000[SC_AUDIO_TITLE_BASS_PHRASE] = 0
+  goto _music_title_bass_setup
 
 _music_after_title_bass
   w000[SC_AUDIO_TITLE_MELODY_DURATION] = r000[SC_AUDIO_TITLE_MELODY_DURATION] - 1
@@ -374,7 +394,87 @@ _music_title_bass_setup
   28
   0,0,0
   4
+  ; D
+  8,12,17
+  28
+  0,0,0
+  4
+  8,12,23
+  28
+  0,0,0
+  4
+  8,12,17
+  28
+  0,0,0
+  4
+  8,12,23
+  28
+  0,0,0
+  4
+  255
+end
+  AUDV1 = 0
+  w000[SC_AUDIO_TITLE_BASS_DURATION] = 1
+  if r000[SC_AUDIO_TITLE_SETUP_MODE] = TITLE_MUSIC_SETUP_INIT && r000[SC_AUDIO_MUSIC_GAME_OVER] then goto _music_select_game_over_melody
+  if r000[SC_AUDIO_TITLE_SETUP_MODE] = TITLE_MUSIC_SETUP_INIT then goto _music_title_melody_setup
+  goto _music_read_title_bass_event
+
+_music_title_bass_turn_around_setup
+  sdata _Title_Bass_Turn_Around = u
+  ; Bass uses full events so volume, tone, pitch, and duration can vary
+  ; independently, just like the melody stream.
+  ; G
+  8,12,26
+  28
+  0,0,0
+  4
+  8,12,17
+  28
+  0,0,0
+  4
+  8,12,26
+  28
+  0,0,0
+  4
+  8,12,17
+  28
+  0,0,0
+  4
   ; C
+  8,12,19
+  28
+  0,0,0
+  4
+  8,12,26
+  28
+  0,0,0
+  4
+  8,12,19
+  28
+  0,0,0
+  4
+  8,12,26
+  28
+  0,0,0
+  4
+  ; G
+  8,12,26
+  28
+  0,0,0
+  4
+  8,12,17
+  28
+  0,0,0
+  4
+  8,12,26
+  28
+  0,0,0
+  4
+  8,12,17
+  28
+  0,0,0
+  4
+  ; D
   8,12,17
   28
   0,0,0
@@ -383,14 +483,23 @@ _music_title_bass_setup
   28
   0,0,0
   4
+  ; turn around
   8,12,17
-  28
+  14
   0,0,0
-  4
+  2
+  8,12,19
+  14
+  0,0,0
+  2
+  8,12,20
+  14
+  0,0,0
+  2
   8,12,23
-  28
+  14
   0,0,0
-  4
+  2
   255
 end
   AUDV1 = 0
