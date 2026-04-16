@@ -184,6 +184,16 @@ Possible room interactions:
 - obstacle opens a route to a doorway
 - obstacle protects the red square from a hazard
 
+### Current Prototype Rules
+
+- The visible `player0` obstacle is a 4x4 push block.
+- `missile0` and `missile1` can push that obstacle from any of the four sides.
+- `player1` is blocked by the obstacle and does not move it.
+- The obstacle stops when its next step would collide with the playfield.
+- The obstacle cannot be pushed into `missile0` or `missile1`.
+- Missiles cannot move through the obstacle; if a push direction is blocked, they
+  must move around to another side before pushing again.
+
 
 ## Hazard Room Draft
 

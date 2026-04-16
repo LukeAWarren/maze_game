@@ -78,6 +78,18 @@
   dim room_right = e
   dim room_up = f
   dim room_down = g
+  dim j0_debounce_up_down = h
+  dim j0_debounce_left_right = i
+  dim j1_debounce_up_down = j
+  dim j1_debounce_left_right = k
+  dim push_source = l
+  dim push_debug_state = m
+  dim push_success = n
+  dim obstacle_moved = o
+  dim coll_detect_x = temp3
+  dim coll_detect_y = temp4
+  dim p0_next_x = p
+  dim p0_next_y = q
   ; music control state lives in Superchip RAM; sdata still uses u/v and w/x
   ; for the active bass and melody stream pointers in standard RAM
 
@@ -87,6 +99,21 @@
   const SCR_TOP_Y = 4
   const SCR_BOT_Y = 87
   const OFFSCRN_Y = 200
+  const J_DEBOUNCE_DELAY = 4
+  const PUSH_SOURCE_NONE = 0
+  const PUSH_SOURCE_M0 = 1
+  const PUSH_SOURCE_M1 = 2
+  const PUSH_DBG_NONE = 0
+  const PUSH_DBG_CONTACT = 1
+  const PUSH_DBG_BOUNDARY = 2
+  const PUSH_DBG_WALL = 3
+  const PUSH_DBG_OTHER_MISSILE = 4
+  const PUSH_DBG_SUCCESS = 5
+  const PUSH_DBG_ALREADY_MOVED = 6
+  const P0_MIN_X = SCR_LEFT_X + 17
+  const P0_MAX_X = SCR_RIGHT_X + 14
+  const P0_MIN_Y = SCR_TOP_Y + 4
+  const P0_MAX_Y = SCR_BOT_Y + 1
 
   ; room entry gates
   const ENTRY_GATE_LEFT_X = 22
@@ -122,6 +149,8 @@
   const START_M0_Y = 65
   const START_M1_X = 100
   const START_M1_Y = 25
+  const ROOM_RIGHT_P0_X = 127
+  const ROOM_RIGHT_P0_Y = 45
 
   COLUP0 = BLUE
   COLUP1 = PINK
@@ -135,10 +164,24 @@
   NUSIZ1 = MISSLE_WIDTH_BIN
   CTRLPF = $11
 
+  player0:
+    %11110000
+    %11110000
+    %11110000
+    %11110000
+end
+  player0x = ROOM_RIGHT_P0_X
+
   ; hide the unused objects
   player0y = OFFSCRN_Y
   player1y = OFFSCRN_Y
   bally = OFFSCRN_Y
+  j0_debounce_up_down = 0
+  j0_debounce_left_right = 0
+  j1_debounce_up_down = 0
+  j1_debounce_left_right = 0
+  push_source = PUSH_SOURCE_NONE
+  push_debug_state = PUSH_DBG_NONE
   score = 0
   scorecolor = WHITE
   w000[SC_AUDIO_MUSIC_GAME_OVER] = 0
@@ -154,9 +197,9 @@ mainloop
 
   NUSIZ0 = MISSLE_WIDTH_BIN
   NUSIZ1 = MISSLE_WIDTH_BIN
-
-  dim coll_detect_x = temp3
-  dim coll_detect_y = temp4
+  obstacle_moved = 0
+  push_debug_state = PUSH_DBG_NONE
+  if !joy0up && !joy0down then j0_debounce_up_down = 0
 
 _j0_up
   if !joy0up then goto _j0_down
@@ -166,7 +209,20 @@ _j0_up
   if pfread(coll_detect_x, coll_detect_y) then goto _j0_down
   coll_detect_x = ((missile0x - M_X_RIGHT_EDGE) / 4)
   if pfread(coll_detect_x, coll_detect_y) then goto _j0_down
+  if j0_debounce_up_down && j0_debounce_up_down <= J_DEBOUNCE_DELAY then goto _j0_up_debounce
+  if player0y = OFFSCRN_Y then goto _j0_up_move
+  if missile0y > player0y + 3 then goto _j0_up_move
+  if missile0y < player0y - 3 then goto _j0_up_move
+  if missile0x > player0x + 4 then goto _j0_up_move
+  if missile0x < player0x - 2 then goto _j0_up_move
+  push_source = PUSH_SOURCE_M0
+  push_debug_state = PUSH_DBG_CONTACT
+  gosub _try_push_p0_up
+  if !push_success then goto _j0_down
+_j0_up_move
   missile0y = missile0y - 1
+_j0_up_debounce
+  j0_debounce_up_down = j0_debounce_up_down + 1
 
 _j0_down
   if !joy0down then goto _j0_left
@@ -176,7 +232,22 @@ _j0_down
   if pfread(coll_detect_x, coll_detect_y) then goto _j0_left
   coll_detect_x = ((missile0x - PF_SCR_X_OFFSET) / 4)
   if pfread(coll_detect_x, coll_detect_y) then goto _j0_left
+  if j0_debounce_up_down && j0_debounce_up_down <= J_DEBOUNCE_DELAY then goto _j0_down_debounce
+  if player0y = OFFSCRN_Y then goto _j0_down_move
+  if missile0y > player0y + 1 then goto _j0_down_move
+  if missile0y < player0y - 5 then goto _j0_down_move
+  if missile0x > player0x + 4 then goto _j0_down_move
+  if missile0x < player0x - 2 then goto _j0_down_move
+  push_source = PUSH_SOURCE_M0
+  push_debug_state = PUSH_DBG_CONTACT
+  gosub _try_push_p0_down
+  if !push_success then goto _j0_left
+_j0_down_move
   missile0y = missile0y + 1
+_j0_down_debounce
+  j0_debounce_up_down = j0_debounce_up_down + 1
+
+  if !joy0left && !joy0right then j0_debounce_left_right = 0
 
 _j0_left
   if !joy0left then goto _j0_right
@@ -186,7 +257,20 @@ _j0_left
   if pfread(coll_detect_x, coll_detect_y) then goto _j0_right
   coll_detect_y = ((missile0y - M0_Y_BOTTOM_EDGE_MINUS1) / 8)
   if pfread(coll_detect_x, coll_detect_y) then goto _j0_right
+  if j0_debounce_left_right && j0_debounce_left_right <= J_DEBOUNCE_DELAY then goto _j0_left_debounce
+  if player0y = OFFSCRN_Y then goto _j0_left_move
+  if missile0x > player0x + 5 then goto _j0_left_move
+  if missile0x < player0x - 1 then goto _j0_left_move
+  if missile0y > player0y + 2 then goto _j0_left_move
+  if missile0y < player0y - 4 then goto _j0_left_move
+  push_source = PUSH_SOURCE_M0
+  push_debug_state = PUSH_DBG_CONTACT
+  gosub _try_push_p0_left
+  if !push_success then goto _j0_right
+_j0_left_move
   missile0x = missile0x - 1
+_j0_left_debounce
+  j0_debounce_left_right = j0_debounce_left_right + 1
 
 _j0_right
   if !joy0right then goto _j1_up
@@ -196,7 +280,22 @@ _j0_right
   if pfread(coll_detect_x, coll_detect_y) then goto _j1_up
   coll_detect_y = ((missile0y - M0_Y_BOTTOM_EDGE_MINUS1) / 8)
   if pfread(coll_detect_x, coll_detect_y) then goto _j1_up
+  if j0_debounce_left_right && j0_debounce_left_right <= J_DEBOUNCE_DELAY then goto _j0_right_debounce
+  if player0y = OFFSCRN_Y then goto _j0_right_move
+  if missile0x > player0x + 3 then goto _j0_right_move
+  if missile0x < player0x - 3 then goto _j0_right_move
+  if missile0y > player0y + 2 then goto _j0_right_move
+  if missile0y < player0y - 4 then goto _j0_right_move
+  push_source = PUSH_SOURCE_M0
+  push_debug_state = PUSH_DBG_CONTACT
+  gosub _try_push_p0_right
+  if !push_success then goto _j1_up
+_j0_right_move
   missile0x = missile0x + 1
+_j0_right_debounce
+  j0_debounce_left_right = j0_debounce_left_right + 1
+
+  if !joy1up && !joy1down then j1_debounce_up_down = 0
 
 _j1_up
   if !joy1up then goto _j1_down
@@ -206,7 +305,20 @@ _j1_up
   if pfread(coll_detect_x, coll_detect_y) then goto _j1_down
   coll_detect_x = ((missile1x - M_X_RIGHT_EDGE) / 4)
   if pfread(coll_detect_x, coll_detect_y) then goto _j1_down
+  if j1_debounce_up_down && j1_debounce_up_down <= J_DEBOUNCE_DELAY then goto _j1_up_debounce
+  if player0y = OFFSCRN_Y then goto _j1_up_move
+  if missile1y > player0y + 4 then goto _j1_up_move
+  if missile1y < player0y - 2 then goto _j1_up_move
+  if missile1x > player0x + 4 then goto _j1_up_move
+  if missile1x < player0x - 2 then goto _j1_up_move
+  push_source = PUSH_SOURCE_M1
+  push_debug_state = PUSH_DBG_CONTACT
+  gosub _try_push_p0_up
+  if !push_success then goto _j1_down
+_j1_up_move
   missile1y = missile1y - 1
+_j1_up_debounce
+  j1_debounce_up_down = j1_debounce_up_down + 1
 
 _j1_down
   if !joy1down then goto _j1_left
@@ -216,7 +328,22 @@ _j1_down
   if pfread(coll_detect_x, coll_detect_y) then goto _j1_left
   coll_detect_x = ((missile1x - PF_SCR_X_OFFSET) / 4)
   if pfread(coll_detect_x, coll_detect_y) then goto _j1_left
+  if j1_debounce_up_down && j1_debounce_up_down <= J_DEBOUNCE_DELAY then goto _j1_down_debounce
+  if player0y = OFFSCRN_Y then goto _j1_down_move
+  if missile1y > player0y + 2 then goto _j1_down_move
+  if missile1y < player0y - 4 then goto _j1_down_move
+  if missile1x > player0x + 4 then goto _j1_down_move
+  if missile1x < player0x - 2 then goto _j1_down_move
+  push_source = PUSH_SOURCE_M1
+  push_debug_state = PUSH_DBG_CONTACT
+  gosub _try_push_p0_down
+  if !push_success then goto _j1_left
+_j1_down_move
   missile1y = missile1y + 1
+_j1_down_debounce
+  j1_debounce_up_down = j1_debounce_up_down + 1
+
+  if !joy1left && !joy1right then j1_debounce_left_right = 0
 
 _j1_left
   if !joy1left then goto _j1_right
@@ -226,7 +353,20 @@ _j1_left
   if pfread(coll_detect_x, coll_detect_y) then goto _j1_right
   coll_detect_y = ((missile1y - M1_Y_BOTTOM_EDGE_MINUS2) / 8)
   if pfread(coll_detect_x, coll_detect_y) then goto _j1_right
+  if j1_debounce_left_right && j1_debounce_left_right <= J_DEBOUNCE_DELAY then goto _j1_left_debounce
+  if player0y = OFFSCRN_Y then goto _j1_left_move
+  if missile1x > player0x + 5 then goto _j1_left_move
+  if missile1x < player0x - 1 then goto _j1_left_move
+  if missile1y > player0y + 3 then goto _j1_left_move
+  if missile1y < player0y - 3 then goto _j1_left_move
+  push_source = PUSH_SOURCE_M1
+  push_debug_state = PUSH_DBG_CONTACT
+  gosub _try_push_p0_left
+  if !push_success then goto _j1_right
+_j1_left_move
   missile1x = missile1x - 1
+_j1_left_debounce
+  j1_debounce_left_right = j1_debounce_left_right + 1
 
 _j1_right
   if !joy1right then goto _check_left_exit
@@ -236,7 +376,20 @@ _j1_right
   if pfread(coll_detect_x, coll_detect_y) then goto _check_left_exit
   coll_detect_y = ((missile1y - M1_Y_BOTTOM_EDGE_MINUS2) / 8)
   if pfread(coll_detect_x, coll_detect_y) then goto _check_left_exit
+  if j1_debounce_left_right && j1_debounce_left_right <= J_DEBOUNCE_DELAY then goto _j1_right_debounce
+  if player0y = OFFSCRN_Y then goto _j1_right_move
+  if missile1x > player0x + 3 then goto _j1_right_move
+  if missile1x < player0x - 3 then goto _j1_right_move
+  if missile1y > player0y + 3 then goto _j1_right_move
+  if missile1y < player0y - 3 then goto _j1_right_move
+  push_source = PUSH_SOURCE_M1
+  push_debug_state = PUSH_DBG_CONTACT
+  gosub _try_push_p0_right
+  if !push_success then goto _check_left_exit
+_j1_right_move
   missile1x = missile1x + 1
+_j1_right_debounce
+  j1_debounce_left_right = j1_debounce_left_right + 1
 
 _check_left_exit
   if missile0x <= SCR_LEFT_X && missile1x <= SCR_LEFT_X then exit_dir = DIR_LEFT : goto _try_transition bank4
@@ -251,10 +404,106 @@ _check_down_exit
   if missile0y >= SCR_BOT_Y && missile1y >= SCR_BOT_Y then exit_dir = DIR_DOWN : goto _try_transition bank4
 
 _draw_frame
-  score = current_room
   gosub _music_tick bank3
   drawscreen
   goto mainloop
+
+_try_push_p0_up
+  push_success = 0
+  if obstacle_moved then push_debug_state = PUSH_DBG_ALREADY_MOVED : return thisbank
+  if player0y <= P0_MIN_Y then push_debug_state = PUSH_DBG_BOUNDARY : return thisbank
+  p0_next_x = player0x
+  p0_next_y = player0y - 1
+  coll_detect_y = ((player0y - 5) / 8)
+  coll_detect_x = ((player0x - 17) / 4)
+  if pfread(coll_detect_x, coll_detect_y) then push_debug_state = PUSH_DBG_WALL : return thisbank
+  coll_detect_x = ((player0x - 14) / 4)
+  if pfread(coll_detect_x, coll_detect_y) then push_debug_state = PUSH_DBG_WALL : return thisbank
+  gosub _p0_target_is_clear
+  if !push_success then return thisbank
+  player0y = player0y - 1
+  obstacle_moved = 1
+  push_success = 1
+  push_debug_state = PUSH_DBG_SUCCESS
+  return thisbank
+
+_try_push_p0_down
+  push_success = 0
+  if obstacle_moved then push_debug_state = PUSH_DBG_ALREADY_MOVED : return thisbank
+  if player0y >= P0_MAX_Y then push_debug_state = PUSH_DBG_BOUNDARY : return thisbank
+  p0_next_x = player0x
+  p0_next_y = player0y + 1
+  coll_detect_y = (player0y / 8)
+  coll_detect_x = ((player0x - 17) / 4)
+  if pfread(coll_detect_x, coll_detect_y) then push_debug_state = PUSH_DBG_WALL : return thisbank
+  coll_detect_x = ((player0x - 14) / 4)
+  if pfread(coll_detect_x, coll_detect_y) then push_debug_state = PUSH_DBG_WALL : return thisbank
+  gosub _p0_target_is_clear
+  if !push_success then return thisbank
+  player0y = player0y + 1
+  obstacle_moved = 1
+  push_success = 1
+  push_debug_state = PUSH_DBG_SUCCESS
+  return thisbank
+
+_try_push_p0_left
+  push_success = 0
+  if obstacle_moved then push_debug_state = PUSH_DBG_ALREADY_MOVED : return thisbank
+  if player0x <= P0_MIN_X then push_debug_state = PUSH_DBG_BOUNDARY : return thisbank
+  p0_next_x = player0x - 1
+  p0_next_y = player0y
+  coll_detect_x = ((player0x - 18) / 4)
+  coll_detect_y = ((player0y - 4) / 8)
+  if pfread(coll_detect_x, coll_detect_y) then push_debug_state = PUSH_DBG_WALL : return thisbank
+  coll_detect_y = ((player0y - 1) / 8)
+  if pfread(coll_detect_x, coll_detect_y) then push_debug_state = PUSH_DBG_WALL : return thisbank
+  gosub _p0_target_is_clear
+  if !push_success then return thisbank
+  player0x = player0x - 1
+  obstacle_moved = 1
+  push_success = 1
+  push_debug_state = PUSH_DBG_SUCCESS
+  return thisbank
+
+_try_push_p0_right
+  push_success = 0
+  if obstacle_moved then push_debug_state = PUSH_DBG_ALREADY_MOVED : return thisbank
+  if player0x >= P0_MAX_X then push_debug_state = PUSH_DBG_BOUNDARY : return thisbank
+  p0_next_x = player0x + 1
+  p0_next_y = player0y
+  coll_detect_x = ((player0x - 13) / 4)
+  coll_detect_y = ((player0y - 4) / 8)
+  if pfread(coll_detect_x, coll_detect_y) then push_debug_state = PUSH_DBG_WALL : return thisbank
+  coll_detect_y = ((player0y - 1) / 8)
+  if pfread(coll_detect_x, coll_detect_y) then push_debug_state = PUSH_DBG_WALL : return thisbank
+  gosub _p0_target_is_clear
+  if !push_success then return thisbank
+  player0x = player0x + 1
+  obstacle_moved = 1
+  push_success = 1
+  push_debug_state = PUSH_DBG_SUCCESS
+  return thisbank
+
+_p0_target_is_clear
+  push_success = 1
+  if push_source = PUSH_SOURCE_M0 then goto _p0_check_m1_overlap
+  if missile0x > p0_next_x + 4 then goto _p0_check_m1_overlap
+  if missile0x < p0_next_x - 2 then goto _p0_check_m1_overlap
+  if missile0y > p0_next_y + 2 then goto _p0_check_m1_overlap
+  if missile0y < p0_next_y - 4 then goto _p0_check_m1_overlap
+  push_success = 0
+  push_debug_state = PUSH_DBG_OTHER_MISSILE
+  return thisbank
+
+_p0_check_m1_overlap
+  if push_source = PUSH_SOURCE_M1 then return thisbank
+  if missile1x > p0_next_x + 4 then return thisbank
+  if missile1x < p0_next_x - 2 then return thisbank
+  if missile1y > p0_next_y + 3 then return thisbank
+  if missile1y < p0_next_y - 3 then return thisbank
+  push_success = 0
+  push_debug_state = PUSH_DBG_OTHER_MISSILE
+  return thisbank
 
   bank 2
   ; reserved for future shared room metadata/helpers
@@ -721,6 +970,7 @@ _resolve_transition
   current_room = next_room
 
 _load_current_room
+  player0y = OFFSCRN_Y
   on current_room goto _load_invalid _load_top_left _load_top _load_top_right _load_left _load_middle _load_right _load_bottom_left _load_bottom _load_bottom_right
 
 _load_invalid
@@ -833,6 +1083,8 @@ _load_right
     .........................X.....X
     XXXXXXXXXXXXXXXXXXXXXXXXXX.X.X.X
 end
+  player0x = ROOM_RIGHT_P0_X
+  player0y = ROOM_RIGHT_P0_Y
   goto _draw_frame bank1
 
 _load_bottom_left
