@@ -26,7 +26,7 @@
   - `.cache/includes.bB`
 - If ADS is used directly, it may also refresh files under `bin/`
 - Latest known `rescue_terri.26b` build budget:
-  - `16 bytes of ROM space left in bank 1`
+  - `10 bytes of ROM space left in bank 1`
   - `1159 bytes of ROM space left in bank 2`
   - `4052 bytes of ROM space left in bank 3`
   - `2702 bytes of ROM space left in bank 4`
@@ -86,6 +86,7 @@ ENTRY_GATE_TOP_Y   = 8     ENTRY_GATE_BOT_Y   = 79
 
 ; Temple easter egg ball
 TEMPLE_BALL_X = 41    TEMPLE_BALL_Y = 53
+TEMPLE_BALL_VISIBLE_FRAMES = 45 ; visible frames per 60-frame score timer cycle
 
 ; Missile dimensions
 MISSLE_WIDTH  = 4    MISSLE_HEIGHT = 4
@@ -152,7 +153,9 @@ This is checked each frame in the p0/p1 logic section.
 
 The temple ball is separate from the sprite hide/show system:
 - `ballx` is fixed at `TEMPLE_BALL_X`
-- `bally` is `TEMPLE_BALL_Y` only in `ROOM_BOTTOM_LEFT`, otherwise `OFFSCRN_Y`
+- Before discovery in `ROOM_BOTTOM_LEFT`, `bally` is `TEMPLE_BALL_Y` for score timer frames 0-44 and `OFFSCRN_Y` for frames 45-59 (about 0.75 seconds on, 0.25 seconds off at 60 Hz)
+- The blink reuses `score_frame_counter`, adds no RAM variable, and leaves collection active at the fixed temple coordinates even while hidden
+- In other rooms, `bally` is always `OFFSCRN_Y`
 - finding the easter egg immediately hides the ball for the rest of that run
 
 ## Playfield Drawing — Runtime `playfield:` Updates

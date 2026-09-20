@@ -82,6 +82,7 @@
   const ROOM_HIDDEN = 10
   const TEMPLE_BALL_X = 41
   const TEMPLE_BALL_Y = 53
+  const TEMPLE_BALL_VISIBLE_FRAMES = 45
   const STATE_TITLE = 0
   const STATE_PLAY = 1
   const TITLE_MUSIC_SETUP_INIT = 0
@@ -427,7 +428,8 @@ _begin_boundary_check
 
 _end_boundary_check
 
-  if mi_room_number = ROOM_BOTTOM_LEFT && !easter_egg_found then bally = TEMPLE_BALL_Y else bally = OFFSCRN_Y
+  ; Blink with the score timer; collection still uses the fixed temple coordinates.
+  if mi_room_number = ROOM_BOTTOM_LEFT && !easter_egg_found && score_frame_counter < TEMPLE_BALL_VISIBLE_FRAMES then bally = TEMPLE_BALL_Y else bally = OFFSCRN_Y
 
 _begin_p0_logic
   if p0_room_number = mi_room_number && player0y = OFFSCRN_Y then goto _restore_pos_p0
@@ -1272,6 +1274,7 @@ _room_top_left
 end
   goto _end_boundary_check bank1
 
+; temple room
 _room_bottom_left
   if mi_room_number = ROOM_BOTTOM then missile0x = ENTRY_GATE_RIGHT_X
   if mi_room_number = ROOM_BOTTOM then missile1x = ENTRY_GATE_RIGHT_X
@@ -1304,6 +1307,7 @@ end
   if easter_egg_found then gosub _open_hidden_passage
   goto _end_boundary_check bank1
 
+; treasure room
 _room_hidden
   if mi_room_number = ROOM_BOTTOM_LEFT then missile0x = ENTRY_GATE_RIGHT_X
   if mi_room_number = ROOM_BOTTOM_LEFT then missile1x = ENTRY_GATE_RIGHT_X
