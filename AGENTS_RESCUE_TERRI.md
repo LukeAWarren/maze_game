@@ -26,14 +26,16 @@
   - `.cache/includes.bB`
 - If ADS is used directly, it may also refresh files under `bin/`
 - Latest known `rescue_terri.26b` build budget:
-  - `19 bytes of ROM space left in bank 1`
-  - `437 bytes of ROM space left in bank 2`
+  - `16 bytes of ROM space left in bank 1`
+  - `1159 bytes of ROM space left in bank 2`
+  - `4052 bytes of ROM space left in bank 3`
+  - `2702 bytes of ROM space left in bank 4`
 
 ## Local References
 
 - Use `.cache/bb_commands_reference.md` as the local batari Basic reference
 - `include div_mul.asm` is already used by the project (provides multiplication/division)
-- `maze.txt` is the full 96×33 room layout reference; each `rescue_terri.26b` room playfield is a 32×11 slice from it
+- `maze.txt` starts with the original 96×33, nine-room layout reference. Appended layouts describe the unlocked temple and the tenth, hidden room outside that grid.
 - `maze.txt` legend markers (`A`, `B`, `C`, `D`, `<>`) are annotations only; they are not present in the compiled playfield data
 
 ## Variable Register Map
@@ -110,6 +112,8 @@ J_DEBOUNCE_DELAY = 4
 - `ball` is only used for the temple easter egg in `ROOM_BOTTOM_LEFT`
 - Game ends when `player1` reaches the same x/y position as `player0` in the same room
 - Touching the temple ball triggers the easter egg, swaps the `player1` sprite art, and uses `_Easter_Egg_Melody` instead of `_Victory_Melody`
+- Discovery also clears playfield columns 0–1 in rows 7–8 of `ROOM_BOTTOM_LEFT`, revealing the passage to `ROOM_HIDDEN`. The opening is visible during the celebration.
+- Either fire button resumes play after the easter egg, silences the music, and restores room colors. The passage stays open on subsequent visits until Reset starts a new run.
 - Game over freezes play and cycles the room colors through 9 presets
 - Title screen is active until either fire button is pressed
 - Title screen plays two-voice music:
@@ -153,25 +157,27 @@ The temple ball is separate from the sprite hide/show system:
 
 ## Playfield Drawing — Runtime `playfield:` Updates
 
-Room walls are currently stored as `playfield:` blocks inside the bank 2 room init routines, not as `pfclear` + `pfhline`/`pfvline`/`pfpixel`.
+Base room walls are stored as `playfield:` blocks inside the bank 2 room init routines. `_open_hidden_passage` uses two `pfhline ... off` operations to clear the temple doorway, both on discovery and after reloading the temple when `easter_egg_found` is set.
 
 Why this still works with collision:
 1. Each room transition jumps into bank 2 and rewrites the active playfield RAM for the destination room
 2. `pfread()` always checks that current playfield RAM, so collision stays aligned with the visible room
 3. The title screen also uses a `playfield:` block, but only for the title layout
 
-`maze.txt` matches all 9 gameplay room `playfield:` blocks exactly once the legend markers are ignored.
+Use the source playfields as authoritative: the main `maze.txt` grid still contains older right-room geometry. Its appended layouts document the unlocked temple and hidden room.
 
 ## Bank Switching Structure
 
-- `set romsize 8k` — 2 banks of 4K each
+- `set romsize 16k` - 4 banks of 4K each
 - **Bank 1:** everything that runs every frame (input, AI, p0/p1 logic, game-over, title loop, boundary-check dispatch stubs)
-- **Bank 2:** room setup routines (`_room_right`, `_room_middle`, `_room_left`, `_room_top`, `_room_bottom`, and corner rooms) — only run on room transitions
+- **Bank 2:** room setup, temple/hidden-room exit selection, passage reveal, and celebration/resume color helpers
+- **Bank 3:** currently unused
+- **Bank 4:** compiler-provided kernel and sprite graphics
 - `_inititial_game_room` is the startup entry point for the `ROOM_RIGHT` playfield/data and is also used when starting a new game
 
 Each bank 2 room routine ends with `goto _end_boundary_check bank1` to return to the main loop.
 
-**Cost:** `goto bankN` = 49 cycles. Keep cross-bank jumps to a minimum (currently: once per room transition frame, which is acceptable).
+**Cost:** `goto bankN` = 49 cycles per jump. A room transition jumps to bank 2 and back; celebration colors also use bank 2. Keep cross-bank jumps to a minimum.
 
 **Important:** Data tables can only be accessed from within the same bank they are defined in.
 That means free ROM in bank 2 cannot directly hold title music streams read every frame by bank 1 with `sread()` unless the playback design is changed to explicitly bank-switch around that data.
@@ -179,6 +185,7 @@ That means free ROM in bank 2 cannot directly hold title music streams read ever
 ## Room Logic
 
 - Room transitions are decided in the bank 1 boundary-check section
+- `ROOM_BOTTOM_LEFT` and `ROOM_HIDDEN` share horizontal edge checks. Bank 2 routes their exits; entry to the hidden room requires `easter_egg_found`.
 - Missile repositioning for the new room happens inside the bank 2 room init label
 - Player1 doorway-follow logic also lives inside the destination room init block
 - Player1 is pulled through a doorway only if it is in the room being left, visible, and within `P1_GATE_THRESHOLD`
@@ -196,6 +203,7 @@ ROOM_TOP_RIGHT   = 6
 ROOM_TOP_LEFT    = 7
 ROOM_BOTTOM_LEFT = 8
 ROOM_BOTTOM_RIGHT= 9
+ROOM_HIDDEN      = 10
 ```
 
 Connections (implemented):
@@ -205,9 +213,12 @@ ROOM_MIDDLE <-> ROOM_LEFT   (left/right doorway)
 ROOM_MIDDLE <-> ROOM_TOP    (top/bottom doorway)
 ROOM_MIDDLE <-> ROOM_BOTTOM (top/bottom doorway)
 ROOM_TOP    <-> ROOM_TOP_RIGHT
+ROOM_TOP    <-> ROOM_TOP_LEFT
 ROOM_LEFT   <-> ROOM_TOP_LEFT
 ROOM_BOTTOM <-> ROOM_BOTTOM_LEFT
 ROOM_BOTTOM <-> ROOM_BOTTOM_RIGHT
+ROOM_RIGHT  <-> ROOM_BOTTOM_RIGHT
+ROOM_BOTTOM_LEFT <-> ROOM_HIDDEN (left/right doorway; unlocked by the easter egg)
 ```
 
 `maze.txt` slice layout:
@@ -228,6 +239,7 @@ ROOM_TOP_RIGHT    GOLD_DARK / GOLD_LIGHT
 ROOM_TOP_LEFT     BRICK_DARK / BRICK_LIGHT
 ROOM_BOTTOM_LEFT  OLIVE_DARK / OLIVE_LIGHT
 ROOM_BOTTOM_RIGHT TEAL_DARK / TEAL_LIGHT
+ROOM_HIDDEN       BLACK / GOLD_LIGHT
 ```
 
 ## Editing Guidance

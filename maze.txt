@@ -37,3 +37,34 @@ B  - Blue Character
 C  - Computer Character
 D  - Final Destination
 <> - Easter Egg
+
+ROOM_BOTTOM_LEFT after finding the easter egg (X = wall, . = open):
+Columns 0-1 in rows 7-8 open to ROOM_HIDDEN on the left.
+The opening remains on later visits until a new run.
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+X........................X......
+X....XX.........XXXXXX...X..XXXX
+X..XXXXXX.......X.....XX...X....
+X.X..XX..X.....X.......XXXX..XXX
+XX........X.....X..XXX.......X..
+XX........X....X.....XXXXXXXXXXX
+.....XX...X....X................
+....XXXX..X....XXXXXXXXXXXXXXXXX
+XX.XXXXXX.......................
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+ROOM_HIDDEN (room 10, outside the original grid):
+The right-hand opening returns to ROOM_BOTTOM_LEFT.
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+X..............................X
+X..............................X
+X..............................X
+X..............................X
+X..............................X
+X..............................X
+X...............................
+X...............................
+X..............................X
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX

@@ -1,5 +1,5 @@
   include div_mul.asm
-  set romsize 8k
+  set romsize 16k
 
   ; room colors
   const BLACK = $00
@@ -79,6 +79,7 @@
   const ROOM_TOP_LEFT = 7
   const ROOM_BOTTOM_LEFT = 8
   const ROOM_BOTTOM_RIGHT = 9
+  const ROOM_HIDDEN = 10
   const TEMPLE_BALL_X = 41
   const TEMPLE_BALL_Y = 53
   const STATE_TITLE = 0
@@ -422,6 +423,7 @@ _begin_boundary_check
   if mi_room_number = ROOM_TOP_LEFT then goto _room_top_left_boundary_check
   if mi_room_number = ROOM_BOTTOM_LEFT then goto _room_bottom_left_boundary_check
   if mi_room_number = ROOM_BOTTOM_RIGHT then goto _room_bottom_right_boundary_check
+  if mi_room_number = ROOM_HIDDEN then goto _room_hidden_boundary_check
 
 _end_boundary_check
 
@@ -585,7 +587,7 @@ _start_easter_egg
     %11110000
     %01100000
 end
-  goto _start_game_over
+  goto _reveal_hidden_passage bank2
 
 _start_game_over
   game_over = 1
@@ -926,7 +928,10 @@ _room_top_left_boundary_check
 _skip_room_top_left_boundary_check
 
 _room_bottom_left_boundary_check
-  if missile0x >= SCR_RIGHT_X && missile1x >= SCR_RIGHT_X then goto _room_bottom bank2
+_room_hidden_boundary_check
+  ; Both rooms use horizontal exits; bank 2 selects the destination.
+  if missile0x >= SCR_RIGHT_X && missile1x >= SCR_RIGHT_X then goto _temple_right_exit bank2
+  if missile0x <= SCR_LEFT_X && missile1x <= SCR_LEFT_X then goto _temple_left_exit bank2
   goto _end_boundary_check
 _skip_room_bottom_left_boundary_check
 
@@ -943,13 +948,30 @@ _skip_room_bottom_right_boundary_check
 
   ; Room playfields are 32 columns by 11 rows. X = wall, . = open floor.
 
+_temple_right_exit
+  if mi_room_number = ROOM_HIDDEN then goto _room_bottom_left
+  goto _room_bottom
+
+_temple_left_exit
+  if mi_room_number = ROOM_BOTTOM_LEFT && easter_egg_found then goto _room_hidden
+  goto _end_boundary_check bank1
+
+_reveal_hidden_passage
+  gosub _open_hidden_passage
+  goto _start_game_over bank1
+
+_open_hidden_passage
+  pfhline 0 7 1 off
+  pfhline 0 8 1 off
+  return thisbank
+
 _resume_after_easter_egg
   AUDV0 = 0 : AUDV1 = 0
   game_over = 0
   color_cycle = 0
   color_cycle_timer = 0
   color_return_mode = 0
-  on mi_room_number goto _resume_invalid_room _color_right _color_middle _color_left _color_top _color_bottom _color_top_right _color_top_left _color_bottom_left _color_bottom_right
+  on mi_room_number goto _resume_invalid_room _color_right _color_middle _color_left _color_top _color_bottom _color_top_right _color_top_left _color_bottom_left _color_bottom_right _color_hidden
 
 _resume_invalid_room
   goto _end_boundary_check bank1
@@ -1001,6 +1023,11 @@ _color_bottom_left
 _color_bottom_right
   COLUBK = TEAL_DARK
   COLUPF = TEAL_LIGHT
+  goto _return_from_color_helper
+
+_color_hidden
+  COLUBK = BLACK
+  COLUPF = GOLD_LIGHT
   goto _return_from_color_helper
 
 _return_from_color_helper
@@ -1252,6 +1279,12 @@ _room_bottom_left
   if mi_room_number = ROOM_BOTTOM && p1_room_number = ROOM_BOTTOM && player1y <> OFFSCRN_Y && player1x <= ENTRY_GATE_LEFT_X - P1_GATE_THRESHOLD then p1_gate_transfer = 1
   if p1_gate_transfer then player1x = ENTRY_GATE_RIGHT_X - P1_GATE_THRESHOLD
   if p1_gate_transfer then p1_room_number = ROOM_BOTTOM_LEFT
+  if mi_room_number = ROOM_HIDDEN then missile0x = ENTRY_GATE_LEFT_X
+  if mi_room_number = ROOM_HIDDEN then missile1x = ENTRY_GATE_LEFT_X
+  p1_gate_transfer = 0
+  if mi_room_number = ROOM_HIDDEN && p1_room_number = ROOM_HIDDEN && player1y <> OFFSCRN_Y && player1x >= ENTRY_GATE_RIGHT_X then p1_gate_transfer = 1
+  if p1_gate_transfer then player1x = ENTRY_GATE_LEFT_X + P1_GATE_THRESHOLD
+  if p1_gate_transfer then p1_room_number = ROOM_BOTTOM_LEFT
   mi_room_number = ROOM_BOTTOM_LEFT
   COLUBK = OLIVE_DARK
   COLUPF = OLIVE_LIGHT
@@ -1266,6 +1299,32 @@ _room_bottom_left
     XX...XX...X....X................
     XX..XXXX..X....XXXXXXXXXXXXXXXXX
     XX.XXXXXX.......................
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+end
+  if easter_egg_found then gosub _open_hidden_passage
+  goto _end_boundary_check bank1
+
+_room_hidden
+  if mi_room_number = ROOM_BOTTOM_LEFT then missile0x = ENTRY_GATE_RIGHT_X
+  if mi_room_number = ROOM_BOTTOM_LEFT then missile1x = ENTRY_GATE_RIGHT_X
+  p1_gate_transfer = 0
+  if mi_room_number = ROOM_BOTTOM_LEFT && p1_room_number = ROOM_BOTTOM_LEFT && player1y <> OFFSCRN_Y && player1x <= ENTRY_GATE_LEFT_X - P1_GATE_THRESHOLD then p1_gate_transfer = 1
+  if p1_gate_transfer then player1x = ENTRY_GATE_RIGHT_X - P1_GATE_THRESHOLD
+  if p1_gate_transfer then p1_room_number = ROOM_HIDDEN
+  mi_room_number = ROOM_HIDDEN
+  COLUBK = BLACK
+  COLUPF = GOLD_LIGHT
+  playfield:
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    X..............................X
+    X..............................X
+    X..............................X
+    X..............................X
+    X..............................X
+    X..............................X
+    X...............................
+    X...............................
+    X..............................X
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 end
   goto _end_boundary_check bank1
