@@ -1,6 +1,7 @@
 /.DS_Store
 /.claude
-/.vscode
+/.vscode/*
+!/.vscode/tasks.json
 /bin
 /bB.asm
 /2600basic_variable_redefs.h
@@ -13,5 +14,8 @@
 /.cache/2600basic_variable_redefs.h
 /.cache/includes.bB
 /.cache/bin
+/.cache/combined/
+/.cache/build.log
 /.cache/*probe*.26b
+/tests/__pycache__/
 /poc

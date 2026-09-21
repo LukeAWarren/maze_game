@@ -1,0 +1,59 @@
+_room_right_boundary_check
+  if missile0x <= SCR_LEFT_X && missile1x <= SCR_LEFT_X then goto _room_middle bank2
+  if missile0y >= SCR_BOT_Y && missile1y >= SCR_BOT_Y then goto _room_bottom_right bank2
+  goto _end_boundary_check
+_skip_room_right_boundary_check
+
+_room_middle_boundary_check
+  if missile0x >= SCR_RIGHT_X && missile1x >= SCR_RIGHT_X then goto _room_right bank2
+  if missile0x <= SCR_LEFT_X && missile1x <= SCR_LEFT_X then goto _room_left bank2
+  if missile0y <= SCR_TOP_Y && missile1y <= SCR_TOP_Y then goto _room_top bank2
+  if missile0y >= SCR_BOT_Y && missile1y >= SCR_BOT_Y then goto _room_bottom bank2
+  goto _end_boundary_check
+_skip_room_middle_boundary_check
+
+_room_left_boundary_check
+  if missile0y <= SCR_TOP_Y && missile1y <= SCR_TOP_Y then goto _room_top_left bank2
+  if missile0x >= SCR_RIGHT_X && missile1x >= SCR_RIGHT_X then goto _room_middle bank2
+  goto _end_boundary_check
+_skip_room_left_boundary_check
+
+_room_top_boundary_check
+  if missile0x <= SCR_LEFT_X && missile1x <= SCR_LEFT_X then goto _room_top_left bank2
+  if missile0x >= SCR_RIGHT_X && missile1x >= SCR_RIGHT_X then goto _room_top_right bank2
+  if missile0y >= SCR_BOT_Y && missile1y >= SCR_BOT_Y then goto _room_middle bank2
+  goto _end_boundary_check
+_skip_room_top_boundary_check
+
+_room_bottom_boundary_check
+  if missile0x <= SCR_LEFT_X && missile1x <= SCR_LEFT_X then goto _room_bottom_left bank2
+  if missile0x >= SCR_RIGHT_X && missile1x >= SCR_RIGHT_X then goto _room_bottom_right bank2
+  if missile0y <= SCR_TOP_Y && missile1y <= SCR_TOP_Y then goto _room_middle bank2
+  goto _end_boundary_check
+_skip_room_bottom_boundary_check
+
+_room_top_right_boundary_check
+  if missile0x <= SCR_LEFT_X && missile1x <= SCR_LEFT_X then goto _room_top bank2
+  goto _end_boundary_check
+_skip_room_top_right_boundary_check
+
+_room_top_left_boundary_check
+  if missile0x >= SCR_RIGHT_X && missile1x >= SCR_RIGHT_X then goto _room_top bank2
+  if missile0y >= SCR_BOT_Y && missile1y >= SCR_BOT_Y then goto _room_left bank2
+  goto _end_boundary_check
+_skip_room_top_left_boundary_check
+
+_room_bottom_left_boundary_check
+_room_hidden_boundary_check
+  ; Both rooms use horizontal exits; bank 2 selects the destination.
+  if missile0x >= SCR_RIGHT_X && missile1x >= SCR_RIGHT_X then goto _temple_right_exit bank2
+  if missile0x <= SCR_LEFT_X && missile1x <= SCR_LEFT_X then goto _temple_left_exit bank2
+  goto _end_boundary_check
+_skip_room_bottom_left_boundary_check
+
+_room_bottom_right_boundary_check
+  if missile0x <= SCR_LEFT_X && missile1x <= SCR_LEFT_X then goto _room_bottom bank2
+  if missile0y <= SCR_TOP_Y && missile1y <= SCR_TOP_Y then goto _room_right bank2
+  goto _end_boundary_check
+_skip_room_bottom_right_boundary_check
+

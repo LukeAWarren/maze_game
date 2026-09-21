@@ -1,0 +1,420 @@
+ bank 2
+
+  dim color_return_mode = temp1
+  dim p1_gate_transfer = temp1
+
+  ; Room playfields are 32 columns by 11 rows. X = wall, . = open floor.
+
+_temple_right_exit
+  if mi_room_number = ROOM_HIDDEN then goto _room_bottom_left
+  goto _room_bottom
+
+_temple_left_exit
+  if mi_room_number = ROOM_BOTTOM_LEFT && easter_egg_found then goto _room_hidden
+  goto _end_boundary_check bank1
+
+_reveal_hidden_passage
+  gosub _open_hidden_passage
+  goto _start_game_over bank1
+
+_open_hidden_passage
+  pfhline 0 7 1 off
+  pfhline 0 8 1 off
+  return thisbank
+
+_resume_after_easter_egg
+  AUDV0 = 0 : AUDV1 = 0
+  game_over = 0
+  color_cycle = 0
+  color_cycle_timer = 0
+  color_return_mode = 0
+  on mi_room_number goto _resume_invalid_room _color_right _color_middle _color_left _color_top _color_bottom _color_top_right _color_top_left _color_bottom_left _color_bottom_right _color_hidden
+
+_resume_invalid_room
+  goto _end_boundary_check bank1
+
+_show_game_over_colors
+  color_return_mode = 1
+  on color_cycle goto _color_right _color_left _color_top _color_middle _color_bottom _color_top_right _color_top_left _color_bottom_left _color_bottom_right
+
+_color_right
+  COLUBK = BLACK
+  COLUPF = WHITE
+  goto _return_from_color_helper
+
+_color_middle
+  COLUBK = ORANGE_DARK
+  COLUPF = ORANGE_LIGHT
+  goto _return_from_color_helper
+
+_color_left
+  COLUBK = GRAY_DARK
+  COLUPF = GRAY_LIGHT
+  goto _return_from_color_helper
+
+_color_top
+  COLUBK = GREEN_DARK
+  COLUPF = GREEN_LIGHT
+  goto _return_from_color_helper
+
+_color_bottom
+  COLUBK = PURPLE_DARK
+  COLUPF = PURPLE_LIGHT
+  goto _return_from_color_helper
+
+_color_top_right
+  COLUBK = GOLD_DARK
+  COLUPF = GOLD_LIGHT
+  goto _return_from_color_helper
+
+_color_top_left
+  COLUBK = BRICK_DARK
+  COLUPF = BRICK_LIGHT
+  goto _return_from_color_helper
+
+_color_bottom_left
+  COLUBK = OLIVE_DARK
+  COLUPF = OLIVE_LIGHT
+  goto _return_from_color_helper
+
+_color_bottom_right
+  COLUBK = TEAL_DARK
+  COLUPF = TEAL_LIGHT
+  goto _return_from_color_helper
+
+_color_hidden
+  COLUBK = BLACK
+  COLUPF = GOLD_LIGHT
+  goto _return_from_color_helper
+
+_return_from_color_helper
+  if color_return_mode then goto _title_music_loop bank1
+  goto _end_boundary_check bank1
+
+_room_right
+  if mi_room_number = ROOM_MIDDLE then missile0x = ENTRY_GATE_LEFT_X
+  if mi_room_number = ROOM_MIDDLE then missile1x = ENTRY_GATE_LEFT_X
+  p1_gate_transfer = 0
+  if mi_room_number = ROOM_MIDDLE && p1_room_number = ROOM_MIDDLE && player1y <> OFFSCRN_Y && player1x >= ENTRY_GATE_RIGHT_X then p1_gate_transfer = 1
+  if p1_gate_transfer then player1x = ENTRY_GATE_LEFT_X + P1_GATE_THRESHOLD
+  if p1_gate_transfer then p1_room_number = ROOM_RIGHT
+  if mi_room_number = ROOM_BOTTOM_RIGHT then missile0y = ENTRY_GATE_BOT_Y
+  if mi_room_number = ROOM_BOTTOM_RIGHT then missile1y = ENTRY_GATE_BOT_Y
+  p1_gate_transfer = 0
+  if mi_room_number = ROOM_BOTTOM_RIGHT && p1_room_number = ROOM_BOTTOM_RIGHT && player1y <> OFFSCRN_Y && player1y <= ENTRY_GATE_TOP_Y + P1_GATE_THRESHOLD then p1_gate_transfer = 1
+  if p1_gate_transfer then player1y = ENTRY_GATE_BOT_Y - P1_GATE_THRESHOLD
+  if p1_gate_transfer then p1_room_number = ROOM_RIGHT
+_inititial_game_room
+  mi_room_number = ROOM_RIGHT
+  COLUBK = BLACK
+  COLUPF = WHITE
+  playfield:
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    ...............................X
+    ...............................X
+    ...............................X
+    XXXXXXXXXXXXXXXXXXXXXXXX.......X
+    .......................X.......X
+    XXXXXXXXXXXXXXXXXXXXXXXX.......X
+    .........................XXXXXXX
+    .........................X.....X
+    .........................X.....X
+    XXXXXXXXXXXXXXXXXXXXXXXXXX.X.X.X
+end
+  goto _end_boundary_check bank1
+
+_room_middle
+  ; depending on which room we came from
+  ; set the correct horizonal or vertical starting position
+  if mi_room_number = ROOM_RIGHT then missile0x = ENTRY_GATE_RIGHT_X
+  if mi_room_number = ROOM_RIGHT then missile1x = ENTRY_GATE_RIGHT_X
+  p1_gate_transfer = 0
+  if mi_room_number = ROOM_RIGHT && p1_room_number = ROOM_RIGHT && player1y <> OFFSCRN_Y && player1x <= ENTRY_GATE_LEFT_X - P1_GATE_THRESHOLD then p1_gate_transfer = 1
+  if p1_gate_transfer then player1x = ENTRY_GATE_RIGHT_X - P1_GATE_THRESHOLD
+  if p1_gate_transfer then p1_room_number = ROOM_MIDDLE
+  if mi_room_number = ROOM_LEFT then missile0x = ENTRY_GATE_LEFT_X
+  if mi_room_number = ROOM_LEFT then missile1x = ENTRY_GATE_LEFT_X
+  p1_gate_transfer = 0
+  if mi_room_number = ROOM_LEFT && p1_room_number = ROOM_LEFT && player1y <> OFFSCRN_Y && player1x >= ENTRY_GATE_RIGHT_X then p1_gate_transfer = 1
+  if p1_gate_transfer then player1x = ENTRY_GATE_LEFT_X + P1_GATE_THRESHOLD
+  if p1_gate_transfer then p1_room_number = ROOM_MIDDLE
+  if mi_room_number = ROOM_TOP then missile0y = ENTRY_GATE_TOP_Y
+  if mi_room_number = ROOM_TOP then missile1y = ENTRY_GATE_TOP_Y
+  p1_gate_transfer = 0
+  if mi_room_number = ROOM_TOP && p1_room_number = ROOM_TOP && player1y <> OFFSCRN_Y && player1y >= ENTRY_GATE_BOT_Y + P1_GATE_THRESHOLD then p1_gate_transfer = 1
+  if p1_gate_transfer then player1y = ENTRY_GATE_TOP_Y + P1_GATE_THRESHOLD
+  if p1_gate_transfer then p1_room_number = ROOM_MIDDLE
+  if mi_room_number = ROOM_BOTTOM then missile0y = ENTRY_GATE_BOT_Y
+  if mi_room_number = ROOM_BOTTOM then missile1y = ENTRY_GATE_BOT_Y
+  p1_gate_transfer = 0
+  if mi_room_number = ROOM_BOTTOM && p1_room_number = ROOM_BOTTOM && player1y <> OFFSCRN_Y && player1y <= ENTRY_GATE_TOP_Y + P1_GATE_THRESHOLD then p1_gate_transfer = 1
+  if p1_gate_transfer then player1y = ENTRY_GATE_BOT_Y - P1_GATE_THRESHOLD
+  if p1_gate_transfer then p1_room_number = ROOM_MIDDLE
+  mi_room_number = ROOM_MIDDLE
+  COLUBK = ORANGE_DARK
+  COLUPF = ORANGE_LIGHT
+  playfield:
+    XXXXXXXXXXXXXX..X..X..XXXXXXXXXX
+    X............X..X..X............
+    .............X..X..X............
+    XXXXXXXXXXXX.X..X..X............
+    X..........X.X..X..X.....XXXXXXX
+    X..........X.X..X..X.....X......
+    ...........X.X..X..XXXXXXX..XXXX
+    XXXX.......X.X..X...........X...
+    ...X.......X.X..XXXXXXXXXXXXX...
+    X..X.......X.X..................
+    X..XX.....XX.XXXXXXXXXXXXXXXXXXX
+end
+  goto _end_boundary_check bank1
+
+_room_left
+  if mi_room_number = ROOM_MIDDLE then missile0x = ENTRY_GATE_RIGHT_X
+  if mi_room_number = ROOM_MIDDLE then missile1x = ENTRY_GATE_RIGHT_X
+  p1_gate_transfer = 0
+  if mi_room_number = ROOM_MIDDLE && p1_room_number = ROOM_MIDDLE && player1y <> OFFSCRN_Y && player1x <= ENTRY_GATE_LEFT_X - P1_GATE_THRESHOLD then p1_gate_transfer = 1
+  if p1_gate_transfer then player1x = ENTRY_GATE_RIGHT_X - P1_GATE_THRESHOLD
+  if p1_gate_transfer then p1_room_number = ROOM_LEFT
+  if mi_room_number = ROOM_TOP_LEFT then missile0y = ENTRY_GATE_TOP_Y
+  if mi_room_number = ROOM_TOP_LEFT then missile1y = ENTRY_GATE_TOP_Y
+  p1_gate_transfer = 0
+  if mi_room_number = ROOM_TOP_LEFT && p1_room_number = ROOM_TOP_LEFT && player1y <> OFFSCRN_Y && player1y >= ENTRY_GATE_BOT_Y + P1_GATE_THRESHOLD then p1_gate_transfer = 1
+  if p1_gate_transfer then player1y = ENTRY_GATE_TOP_Y + P1_GATE_THRESHOLD
+  if p1_gate_transfer then p1_room_number = ROOM_LEFT
+  mi_room_number = ROOM_LEFT
+  COLUBK = GRAY_DARK
+  COLUPF = GRAY_LIGHT
+  playfield:
+    X........X......X...XXXXXXXXXXXX
+    X........X......X..............X
+    X........XXXX...X...............
+    X........X......X..............X
+    X........X...XXXXXXXXXXXXXXXXX.X
+    X........X......X............XXX
+    X........XXXX...X....XXXXXXX....
+    X........X...........X.....XXXXX
+    X........XXXXXXXXXXXXX..........
+    X..............................X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+end
+  goto _end_boundary_check bank1
+
+_room_top
+  if mi_room_number = ROOM_MIDDLE then missile0y = ENTRY_GATE_BOT_Y
+  if mi_room_number = ROOM_MIDDLE then missile1y = ENTRY_GATE_BOT_Y
+  p1_gate_transfer = 0
+  if mi_room_number = ROOM_MIDDLE && p1_room_number = ROOM_MIDDLE && player1y <> OFFSCRN_Y && player1y <= ENTRY_GATE_TOP_Y + P1_GATE_THRESHOLD then p1_gate_transfer = 1
+  if p1_gate_transfer then player1y = ENTRY_GATE_BOT_Y - P1_GATE_THRESHOLD
+  if p1_gate_transfer then p1_room_number = ROOM_TOP
+  if mi_room_number = ROOM_TOP_LEFT then missile0x = ENTRY_GATE_LEFT_X
+  if mi_room_number = ROOM_TOP_LEFT then missile1x = ENTRY_GATE_LEFT_X
+  p1_gate_transfer = 0
+  if mi_room_number = ROOM_TOP_LEFT && p1_room_number = ROOM_TOP_LEFT && player1y <> OFFSCRN_Y && player1x >= ENTRY_GATE_RIGHT_X then p1_gate_transfer = 1
+  if p1_gate_transfer then player1x = ENTRY_GATE_LEFT_X + P1_GATE_THRESHOLD
+  if p1_gate_transfer then p1_room_number = ROOM_TOP
+  if mi_room_number = ROOM_TOP_RIGHT then missile0x = ENTRY_GATE_RIGHT_X
+  if mi_room_number = ROOM_TOP_RIGHT then missile1x = ENTRY_GATE_RIGHT_X
+  p1_gate_transfer = 0
+  if mi_room_number = ROOM_TOP_RIGHT && p1_room_number = ROOM_TOP_RIGHT && player1y <> OFFSCRN_Y && player1x <= ENTRY_GATE_LEFT_X - P1_GATE_THRESHOLD then p1_gate_transfer = 1
+  if p1_gate_transfer then player1x = ENTRY_GATE_RIGHT_X - P1_GATE_THRESHOLD
+  if p1_gate_transfer then p1_room_number = ROOM_TOP
+  mi_room_number = ROOM_TOP
+  COLUBK = GREEN_DARK
+  COLUPF = GREEN_LIGHT
+  playfield:
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    ................................
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    X...............................
+    ...XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    XXXX............................
+    ................XXXXXXXXXXXXXXXX
+    ................X...............
+    X...............X..XXXXXXXXXXXXX
+    X...............X..X............
+    XXXXXXXXXXXXXX..X..X..XXXXXXXXXX
+end
+  goto _end_boundary_check bank1
+
+_room_bottom
+  if mi_room_number = ROOM_MIDDLE then missile0y = ENTRY_GATE_TOP_Y
+  if mi_room_number = ROOM_MIDDLE then missile1y = ENTRY_GATE_TOP_Y
+  p1_gate_transfer = 0
+  if mi_room_number = ROOM_MIDDLE && p1_room_number = ROOM_MIDDLE && player1y <> OFFSCRN_Y && player1y >= ENTRY_GATE_BOT_Y + P1_GATE_THRESHOLD then p1_gate_transfer = 1
+  if p1_gate_transfer then player1y = ENTRY_GATE_TOP_Y + P1_GATE_THRESHOLD
+  if p1_gate_transfer then p1_room_number = ROOM_BOTTOM
+  if mi_room_number = ROOM_BOTTOM_LEFT then missile0x = ENTRY_GATE_LEFT_X
+  if mi_room_number = ROOM_BOTTOM_LEFT then missile1x = ENTRY_GATE_LEFT_X
+  p1_gate_transfer = 0
+  if mi_room_number = ROOM_BOTTOM_LEFT && p1_room_number = ROOM_BOTTOM_LEFT && player1y <> OFFSCRN_Y && player1x >= ENTRY_GATE_RIGHT_X then p1_gate_transfer = 1
+  if p1_gate_transfer then player1x = ENTRY_GATE_LEFT_X + P1_GATE_THRESHOLD
+  if p1_gate_transfer then p1_room_number = ROOM_BOTTOM
+  if mi_room_number = ROOM_BOTTOM_RIGHT then missile0x = ENTRY_GATE_RIGHT_X
+  if mi_room_number = ROOM_BOTTOM_RIGHT then missile1x = ENTRY_GATE_RIGHT_X
+  p1_gate_transfer = 0
+  if mi_room_number = ROOM_BOTTOM_RIGHT && p1_room_number = ROOM_BOTTOM_RIGHT && player1y <> OFFSCRN_Y && player1x <= ENTRY_GATE_LEFT_X - P1_GATE_THRESHOLD then p1_gate_transfer = 1
+  if p1_gate_transfer then player1x = ENTRY_GATE_RIGHT_X - P1_GATE_THRESHOLD
+  if p1_gate_transfer then p1_room_number = ROOM_BOTTOM
+  mi_room_number = ROOM_BOTTOM
+  COLUBK = PURPLE_DARK
+  COLUPF = PURPLE_LIGHT
+  playfield:
+    X..XX.....XX.XXXXXXXXXXXXXXXXXXX
+    ...X......X..X..................
+    XXX.....XX..X..XX..XXXXXXXXXXXXX
+    .......X...X..X..X..XXXXXXXX....
+    XXXXXXX...X..X....X........X.XXX
+    ............X......XXXXXXXXX.X..
+    XXXXXXXXXXXX.............XXX.X.X
+    .............................X.X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.X
+    ...............................X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+end
+  goto _end_boundary_check bank1
+
+_room_top_right
+  if mi_room_number = ROOM_TOP then missile0x = ENTRY_GATE_LEFT_X
+  if mi_room_number = ROOM_TOP then missile1x = ENTRY_GATE_LEFT_X
+  p1_gate_transfer = 0
+  if mi_room_number = ROOM_TOP && p1_room_number = ROOM_TOP && player1y <> OFFSCRN_Y && player1x >= ENTRY_GATE_RIGHT_X then p1_gate_transfer = 1
+  if p1_gate_transfer then player1x = ENTRY_GATE_LEFT_X + P1_GATE_THRESHOLD
+  if p1_gate_transfer then p1_room_number = ROOM_TOP_RIGHT
+  mi_room_number = ROOM_TOP_RIGHT
+  COLUBK = GOLD_DARK
+  COLUPF = GOLD_LIGHT
+  playfield:
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    ...............................X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.X
+    .............................X.X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXX..X.X
+    .......................X.....X.X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXX..X.X
+    .............................X.X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.X
+    ...............................X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+end
+  goto _end_boundary_check bank1
+
+_room_top_left
+  if mi_room_number = ROOM_TOP then missile0x = ENTRY_GATE_RIGHT_X
+  if mi_room_number = ROOM_TOP then missile1x = ENTRY_GATE_RIGHT_X
+  p1_gate_transfer = 0
+  if mi_room_number = ROOM_TOP && p1_room_number = ROOM_TOP && player1y <> OFFSCRN_Y && player1x <= ENTRY_GATE_LEFT_X - P1_GATE_THRESHOLD then p1_gate_transfer = 1
+  if p1_gate_transfer then player1x = ENTRY_GATE_RIGHT_X - P1_GATE_THRESHOLD
+  if p1_gate_transfer then p1_room_number = ROOM_TOP_LEFT
+  if mi_room_number = ROOM_LEFT then missile0y = ENTRY_GATE_BOT_Y
+  if mi_room_number = ROOM_LEFT then missile1y = ENTRY_GATE_BOT_Y
+  p1_gate_transfer = 0
+  if mi_room_number = ROOM_LEFT && p1_room_number = ROOM_LEFT && player1y <> OFFSCRN_Y && player1y <= ENTRY_GATE_TOP_Y + P1_GATE_THRESHOLD then p1_gate_transfer = 1
+  if p1_gate_transfer then player1y = ENTRY_GATE_BOT_Y - P1_GATE_THRESHOLD
+  if p1_gate_transfer then p1_room_number = ROOM_TOP_LEFT
+  mi_room_number = ROOM_TOP_LEFT
+  COLUBK = BRICK_DARK
+  COLUPF = BRICK_LIGHT
+  playfield:
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    XXXXXXXXXXXXX..............XX...
+    X...............XXXXXXXXX......X
+    X........XXXXXXX.......XXXXXXXXX
+    X........X........XXX...........
+    X........X........XX.XXXXXXXXXXX
+    X........X......XXXX.XXXXXXX....
+    X........X......X..........X....
+    X........X......X...XXXX...X...X
+    X........X......X...X..........X
+    X........X......X...XXXXXXXXXXXX
+end
+  goto _end_boundary_check bank1
+
+; temple room
+_room_bottom_left
+  if mi_room_number = ROOM_BOTTOM then missile0x = ENTRY_GATE_RIGHT_X
+  if mi_room_number = ROOM_BOTTOM then missile1x = ENTRY_GATE_RIGHT_X
+  p1_gate_transfer = 0
+  if mi_room_number = ROOM_BOTTOM && p1_room_number = ROOM_BOTTOM && player1y <> OFFSCRN_Y && player1x <= ENTRY_GATE_LEFT_X - P1_GATE_THRESHOLD then p1_gate_transfer = 1
+  if p1_gate_transfer then player1x = ENTRY_GATE_RIGHT_X - P1_GATE_THRESHOLD
+  if p1_gate_transfer then p1_room_number = ROOM_BOTTOM_LEFT
+  if mi_room_number = ROOM_HIDDEN then missile0x = ENTRY_GATE_LEFT_X
+  if mi_room_number = ROOM_HIDDEN then missile1x = ENTRY_GATE_LEFT_X
+  p1_gate_transfer = 0
+  if mi_room_number = ROOM_HIDDEN && p1_room_number = ROOM_HIDDEN && player1y <> OFFSCRN_Y && player1x >= ENTRY_GATE_RIGHT_X then p1_gate_transfer = 1
+  if p1_gate_transfer then player1x = ENTRY_GATE_LEFT_X + P1_GATE_THRESHOLD
+  if p1_gate_transfer then p1_room_number = ROOM_BOTTOM_LEFT
+  mi_room_number = ROOM_BOTTOM_LEFT
+  COLUBK = OLIVE_DARK
+  COLUPF = OLIVE_LIGHT
+  playfield:
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    X........................X......
+    X....XX.........XXXXXX...X..XXXX
+    X..XXXXXX.......X.....XX...X....
+    X.X..XX..X.....X.......XXXX..XXX
+    XX........X.....X..XXX.......X..
+    XX........X....X.....XXXXXXXXXXX
+    XX...XX...X....X................
+    XX..XXXX..X....XXXXXXXXXXXXXXXXX
+    XX.XXXXXX.......................
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+end
+  if easter_egg_found then gosub _open_hidden_passage
+  goto _end_boundary_check bank1
+
+; treasure room
+_room_hidden
+  if mi_room_number = ROOM_BOTTOM_LEFT then missile0x = ENTRY_GATE_RIGHT_X
+  if mi_room_number = ROOM_BOTTOM_LEFT then missile1x = ENTRY_GATE_RIGHT_X
+  p1_gate_transfer = 0
+  if mi_room_number = ROOM_BOTTOM_LEFT && p1_room_number = ROOM_BOTTOM_LEFT && player1y <> OFFSCRN_Y && player1x <= ENTRY_GATE_LEFT_X - P1_GATE_THRESHOLD then p1_gate_transfer = 1
+  if p1_gate_transfer then player1x = ENTRY_GATE_RIGHT_X - P1_GATE_THRESHOLD
+  if p1_gate_transfer then p1_room_number = ROOM_HIDDEN
+  mi_room_number = ROOM_HIDDEN
+  COLUBK = BLACK
+  COLUPF = GOLD_LIGHT
+  playfield:
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    X..............................X
+    X..............................X
+    X..........XX.....XX...........X
+    X...........XXXXXXX............X
+    X............XXXXX.............X
+    X.............XXX..............X
+    X..............X................
+    X..............X................
+    X.............XXX..............X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+end
+  goto _end_boundary_check bank1
+
+_room_bottom_right
+  if mi_room_number = ROOM_BOTTOM then missile0x = ENTRY_GATE_LEFT_X
+  if mi_room_number = ROOM_BOTTOM then missile1x = ENTRY_GATE_LEFT_X
+  p1_gate_transfer = 0
+  if mi_room_number = ROOM_BOTTOM && p1_room_number = ROOM_BOTTOM && player1y <> OFFSCRN_Y && player1x >= ENTRY_GATE_RIGHT_X then p1_gate_transfer = 1
+  if p1_gate_transfer then player1x = ENTRY_GATE_LEFT_X + P1_GATE_THRESHOLD
+  if p1_gate_transfer then p1_room_number = ROOM_BOTTOM_RIGHT
+  if mi_room_number = ROOM_RIGHT then missile0y = ENTRY_GATE_TOP_Y
+  if mi_room_number = ROOM_RIGHT then missile1y = ENTRY_GATE_TOP_Y
+  p1_gate_transfer = 0
+  if mi_room_number = ROOM_RIGHT && p1_room_number = ROOM_RIGHT && player1y <> OFFSCRN_Y && player1y >= ENTRY_GATE_BOT_Y + P1_GATE_THRESHOLD then p1_gate_transfer = 1
+  if p1_gate_transfer then player1y = ENTRY_GATE_TOP_Y + P1_GATE_THRESHOLD
+  if p1_gate_transfer then p1_room_number = ROOM_BOTTOM_RIGHT
+  mi_room_number = ROOM_BOTTOM_RIGHT
+  COLUBK = TEAL_DARK
+  COLUPF = TEAL_LIGHT
+  playfield:
+    XXXXXXXXXXXXXXXXXXXXXXXXXX.X.X.X
+    ..............X............X.X.X
+    XXXXXXXXXXXXX.X............X.X.X
+    ....X.......X.X............X.X.X
+    XXX.X.XXXXX.X.X............X.X.X
+    ..X.X.X...X.X..............X.X.X
+    X.X.X.X.X.X.XXXXXXXXXXXXXXXX.X.X
+    X.X...X.X.X..................X.X
+    X.XXXXX.X.XXXXXXXXXXXXXXXXXXXX.X
+    X.......X......................X
+    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+end
+  goto _end_boundary_check bank1

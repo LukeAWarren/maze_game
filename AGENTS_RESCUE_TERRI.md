@@ -3,13 +3,41 @@
 ## Build
 
 - Project root: `/Users/luke/code/atari/batari/maze_game`
-- Main source: `rescue_terri.26b`
+- Entry source: `rescue_terri.26b`; the game is split across the files listed below
 - Standard compile command: `sh ./build.sh`
+- Build and run in Stella on macOS: `sh ./run.sh`. It uses an installed Stella.app or Atari Dev Studio's bundled copy; `STELLA_APP` can override the app path.
 - `build.sh` defaults `bB` to `/Users/luke/opt/batari-Basic` and runs `2600basic.sh`
-- `build.sh` now defaults to `rescue_terri.26b`; passing an explicit source still works
+- `build.sh` defaults to the full Rescue Terri build; an explicit `rescue_terri.26b` path does the same. Other standalone sources still compile individually.
+- In VS Code, use **Terminal > Run Build Task** (`Cmd+Shift+B` on macOS) and the default **Build Rescue Terri** task. It builds the whole game regardless of the active editor file.
+- To build and launch Stella, use **Terminal > Run Task > Build and Run Rescue Terri**. A failed build does not launch the previous ROM.
+- Local VS Code user shortcuts map **F5** to save all files and run **Build and Run Rescue Terri**, and **Shift+F5** to save all files and run **Build Rescue Terri**. These bindings apply only to batari Basic files in this project's root and `src/` folder; other projects retain their existing shortcuts.
+- Keyboard shortcuts live in the local VS Code user `keybindings.json`, not in this repository. A new checkout/machine has the tasks but needs its own shortcut bindings.
+- Do not compile an individual fragment or the entry source directly with Atari Dev Studio's single-file build command. Use the task or `build.sh` so all fragments are included.
+- `build.sh` combines the BASIC sources in the order below before invoking the compiler. The bB `include` command is for assembly modules, not these BASIC fragments.
+- Compiler diagnostics of the form `N: message` or `line N: message` are mapped back to the editable source file and local line number. Assembly-stage diagnostics still refer to generated assembly.
+- Build-wrapper tests: `python3 -m unittest discover -s tests -v` (standard library only; uses a fake compiler, not Stella)
 - Current CLI toolchain works in this repo with:
   - batari Basic `v1.9 (c)2025`
   - DASM `2.20.15-SNAPSHOT`
+
+## Source Navigation
+
+These files share one global variable and label namespace. File boundaries do not introduce bank switches or change execution order.
+
+| Compilation order | File | Contents | ROM bank |
+|---|---|---|---|
+| 1 | [rescue_terri.26b](rescue_terri.26b) | Constants, RAM aliases, sprite setup, startup | 1 |
+| 2 | [src/gameplay.26b](src/gameplay.26b) | Main loop, joystick/wall checks, Terri AI, score, ball blink and discovery | 1 |
+| 3 | [src/screens.26b](src/screens.26b) | Title screen, celebration flow, fire-button handling, starting a game | 1 |
+| 4 | [src/music.26b](src/music.26b) | Two-channel playback and title, easter-egg, and victory song data | 1 |
+| 5 | [src/room_exits.26b](src/room_exits.26b) | Room boundary checks and transition dispatch | 1 |
+| 6 | [src/rooms.26b](src/rooms.26b) | Bank 2 declaration, room loaders/playfields, doorway placement, colors, hidden passage | 2 |
+
+- To change a song, look for its `sdata` block in `src/music.26b`. The bass still uses the existing compressed pitch/rest format.
+- To edit the Temple Room, find `_room_bottom_left` in `src/rooms.26b`; the Treasure Room is `_room_hidden` in the same file.
+- Keep playfields with their room loader. `maze.txt` is a reference, not compiler input.
+- To add/reorder a fragment, update the explicit list in `build.sh`. Never compile a glob of `src/*.26b`; alphabetical order is not execution order.
+- The source split leaves ROM banks, gameplay, and audio unchanged. Moving music into bank 3 and adding treasure-room music are separate future changes.
 
 ## Build Outputs
 
@@ -24,7 +52,11 @@
   - `.cache/bB.asm`
   - `.cache/2600basic_variable_redefs.h`
   - `.cache/includes.bB`
-- If ADS is used directly, it may also refresh files under `bin/`
+- Generated build input and diagnostics (ignored by Git):
+  - `.cache/combined/rescue_terri.26b` - combined source; do not edit
+  - `.cache/combined/source-map.tsv` - combined starting line and source path for each nonempty fragment
+  - `.cache/build.log` - unmodified compiler output from the latest build
+- A failed build preserves the last successful `.bin` and `.a26`; check build status before running a ROM. Generated assembly/listings may reflect the failed attempt.
 - Latest known `rescue_terri.26b` build budget:
   - `10 bytes of ROM space left in bank 1`
   - `1159 bytes of ROM space left in bank 2`

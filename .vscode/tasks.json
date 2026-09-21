@@ -1,0 +1,57 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Rescue Terri",
+            "type": "process",
+            "command": "/bin/sh",
+            "args": ["${workspaceFolder}/build.sh"],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": {
+                "owner": "batari-basic",
+                "fileLocation": "absolute",
+                "pattern": {
+                    "regexp": "^(.*\\.26b):(\\d+):\\s*(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "message": 3
+                }
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true
+            }
+        },
+        {
+            "label": "Build and Run Rescue Terri",
+            "type": "process",
+            "command": "/bin/sh",
+            "args": ["${workspaceFolder}/run.sh"],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": {
+                "owner": "batari-basic",
+                "fileLocation": "absolute",
+                "pattern": {
+                    "regexp": "^(.*\\.26b):(\\d+):\\s*(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "message": 3
+                }
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true
+            }
+        }
+    ]
+}

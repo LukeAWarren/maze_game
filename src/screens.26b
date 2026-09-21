@@ -1,0 +1,78 @@
+_start_game_over
+  game_over = 1
+  color_cycle = 0
+  color_cycle_timer = 0
+  title_music_setup_mode = TITLE_MUSIC_SETUP_INIT
+  goto _title_bass_setup
+
+_game_over
+  if color_cycle_timer < COLOR_CYCLE_DELAY then color_cycle_timer = color_cycle_timer + 1 : goto _game_over_colors
+  color_cycle_timer = 0
+  color_cycle = color_cycle + 1
+  if color_cycle > 8 then color_cycle = 0
+
+_game_over_colors
+  COLUP0 = BLUE
+  COLUP1 = PINK
+  goto _show_game_over_colors bank2
+_after_victory_music
+  if easter_egg_found && joy0fire then goto _resume_after_easter_egg bank2
+  if easter_egg_found && joy1fire then goto _resume_after_easter_egg bank2
+  drawscreen
+  goto mainloop
+
+_title_loop
+  if joy0fire || joy1fire then goto _start_game
+  goto _title_music_loop
+_after_title_music
+  COLUP0 = BLUE
+  COLUP1 = PINK
+  drawscreen
+  goto mainloop
+
+_start_game
+  AUDV0 = 0 : AUDV1 = 0
+  game_state = STATE_PLAY
+  game_over = 0
+  color_cycle = 0
+  color_cycle_timer = 0
+  score = 0
+  score_frame_counter = 0
+  scorecolor = SCORE_COLOR
+  p1_room_number = ROOM_RIGHT
+  p0_room_number = ROOM_RIGHT
+  player1x = START_P1_X
+  player1y = START_P1_Y
+  p1_y = START_P1_Y
+  player0x = START_P0_X
+  player0y = START_P0_Y
+  p0_y = START_P0_Y
+  missile0x = START_M0_X
+  missile0y = START_M0_Y
+  missile1x = START_M1_X
+  missile1y = START_M1_Y
+  goto _inititial_game_room bank2
+
+
+_title_screen
+  mi_room_number = 0
+  COLUBK = BLACK
+  COLUPF = WHITE
+  scorecolor = BLACK
+  playfield:
+    ....XXX..XXX.XXX.XXX.X.X.XXX....
+    ....X..X.X...X...X...X.X.X......
+    ....XXX..XXX.XXX.X...X.X.XX.....
+    ....X..X.X.....X.X...X.X.X......
+    ....X..X.XXX.XXX.XXX.XXX.XXX....
+    ................................
+    ......XXX.XXX.XXX..XXX..........
+    .......X..X...X..X.X..X.X.......
+    .......X..XX..XXX..XXX..X.......
+    .......X..X...X..X.X..X.X.......
+    .......X..XXX.X..X.X..X.X.......
+end
+ title_music_setup_mode = TITLE_MUSIC_SETUP_INIT
+ title_melody_phrase = 0
+ goto _title_bass_setup
+
