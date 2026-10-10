@@ -66,8 +66,8 @@ _color_right
   goto _return_from_color_helper
 
 _color_middle
-  COLUBK = ORANGE_DARK
-  COLUPF = ORANGE_LIGHT
+  COLUBK = OLIVE_DARK
+  COLUPF = OLIVE_LIGHT
   goto _return_from_color_helper
 
 _color_left
@@ -96,8 +96,8 @@ _color_top_left
   goto _return_from_color_helper
 
 _color_bottom_left
-  COLUBK = OLIVE_DARK
-  COLUPF = OLIVE_LIGHT
+  COLUBK = ORANGE_DARK
+  COLUPF = ORANGE_LIGHT
   goto _return_from_color_helper
 
 _color_bottom_right
@@ -174,8 +174,8 @@ _room_middle
   if p1_gate_transfer then player1y = ENTRY_GATE_BOT_Y - P1_GATE_THRESHOLD
   if p1_gate_transfer then p1_room_number = ROOM_MIDDLE
   mi_room_number = ROOM_MIDDLE
-  COLUBK = ORANGE_DARK
-  COLUPF = ORANGE_LIGHT
+  COLUBK = OLIVE_DARK
+  COLUPF = OLIVE_LIGHT
   playfield:
     XXXXXXXXXXXXXX..X..X..XXXXXXXXXX
     X............X..X..X............
@@ -367,8 +367,8 @@ _room_bottom_left
   if p1_gate_transfer then player1x = ENTRY_GATE_LEFT_X + P1_GATE_THRESHOLD
   if p1_gate_transfer then p1_room_number = ROOM_BOTTOM_LEFT
   mi_room_number = ROOM_BOTTOM_LEFT
-  COLUBK = OLIVE_DARK
-  COLUPF = OLIVE_LIGHT
+  COLUBK = ORANGE_DARK
+  COLUPF = ORANGE_LIGHT
   playfield:
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
     X........................X......
