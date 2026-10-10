@@ -134,8 +134,8 @@ OFFSCRN_Y   = 200    ; y value used to hide sprites off-screen
 SCORE_COLOR = $2E    ; gold score color
 
 ; Entry gate positions (where missiles/player1 appear when entering a room)
-ENTRY_GATE_LEFT_X  = 22    ENTRY_GATE_RIGHT_X = 138
-ENTRY_GATE_TOP_Y   = 8     ENTRY_GATE_BOT_Y   = 79
+ENTRY_GATE_LEFT_X  = 19    ENTRY_GATE_RIGHT_X = 141
+ENTRY_GATE_TOP_Y   = 5     ENTRY_GATE_BOT_Y   = 86
 
 ; Temple easter egg ball
 TEMPLE_BALL_X = 41    TEMPLE_BALL_Y = 53
@@ -152,7 +152,7 @@ PF_SCR_X_OFFSET = 18    PF_SCR_Y_OFFSET = 3
 ; Player1 behavior
 P1_MOVE_DELAY      = 3   ; skip 3 frames; step on the 4th eligible frame
 P1_GATE_FOLLOW_DISTANCE = 8 ; maximum distance inward from the exit boundary
-P1_GATE_THRESHOLD  = 2   ; arrival offset inside the destination doorway
+P1_GATE_THRESHOLD  = 0   ; Terri uses the same arrival inset as the players
 COLOR_CYCLE_DELAY  = 12  ; advance color on the 13th loop iteration
 SCORE_FRAMES_PER_SECOND = 60 ; frames per score increment
 
@@ -255,7 +255,8 @@ Music readers and all `sdata` streams therefore live together in bank 3. Bank 1 
 - `_check_p1_exit` checks the full path from Terri's 4x4 footprint to the old room's edge before replacing the playfield. `_finish_room_change` then checks from the new room's edge to the arrival position. Only clear paths on both sides permit transfer; otherwise Terri keeps her old room and coordinates and is hidden normally.
 - This prevents following through a wall merely because Terri is close to the screen edge, including the left wall below the upper corridor in `ROOM_TOP`. Both checks read the live playfield, so the unlocked temple passage works normally.
 - Gate checks read standard-kernel playfield RAM directly in bank 2 to avoid repeated bank switches. Horizontal spans within one byte use a combined wall mask; spans across bytes use individual cell reads. The direction is stored in `temp6`, which survives room loading and `_open_hidden_passage`; `temp1`/`temp2` are scratch and `temp3`–`temp5` hold scan coordinates. No additional persistent RAM is allocated.
-- Adjust `P1_GATE_FOLLOW_DISTANCE` in `rescue_terri.26b` to tune how forgiving departures are. `P1_GATE_THRESHOLD = 2` controls arrival placement separately, so widening the follow zone does not move Terri deeper into the destination room.
+- Players and Terri arrive one pixel inside the new room's transition threshold: left `x = 19`, right `x = 141`, top `y = 5`, bottom `y = 86`. This keeps arrivals close to the edge without immediately switching back when the controls are released.
+- Adjust `P1_GATE_FOLLOW_DISTANCE` in `rescue_terri.26b` to tune how forgiving departures are. Arrival placement is separate: `ENTRY_GATE_*` sets the players' inset, and `P1_GATE_THRESHOLD = 0` adds no extra inset for Terri.
 - Horizontal transfers preserve `player1y`; vertical transfers preserve `player1x`
 - Verified the compiled ROM against 3,144 positions across all 22 directed room connections, including blocked exits, blocked arrivals, the eight-pixel range, hidden/absent Terri, and the original Room Right start. These CPU checks do not render Stella's display.
 

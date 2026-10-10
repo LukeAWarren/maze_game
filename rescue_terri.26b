@@ -129,10 +129,11 @@
   const HOUSE_ENTRY_X = 129
   const HOUSE_ENTRY_Y = 74
 
-  const ENTRY_GATE_LEFT_X = 22
-  const ENTRY_GATE_RIGHT_X = 138
-  const ENTRY_GATE_TOP_Y = 8
-  const ENTRY_GATE_BOT_Y = 79
+  ; One pixel inside the transition thresholds prevents an immediate return.
+  const ENTRY_GATE_LEFT_X = SCR_LEFT_X + 1
+  const ENTRY_GATE_RIGHT_X = SCR_RIGHT_X - 1
+  const ENTRY_GATE_TOP_Y = SCR_TOP_Y + 1
+  const ENTRY_GATE_BOT_Y = SCR_BOT_Y - 1
 
   ; missile dimensions (defined first, used in collision constants)
   const MISSLE_WIDTH = 4
@@ -190,7 +191,7 @@
   const P1_FOLLOW_RIGHT_X = SCR_RIGHT_X - P1_GATE_FOLLOW_DISTANCE
   const P1_FOLLOW_TOP_Y = SCR_TOP_Y + P1_GATE_FOLLOW_DISTANCE
   const P1_FOLLOW_BOT_Y = SCR_BOT_Y - P1_GATE_FOLLOW_DISTANCE
-  const P1_GATE_THRESHOLD = 2 ; arrival offset inside the destination doorway
+  const P1_GATE_THRESHOLD = 0 ; Terri uses the same arrival inset as the players
   const P1_EXIT_LEFT = 1
   const P1_EXIT_RIGHT = 2
   const P1_EXIT_UP = 3
