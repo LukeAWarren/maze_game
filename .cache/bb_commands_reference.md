@@ -1,6 +1,18 @@
 # batari Basic (bB) Command Reference
 
-Extracted from: https://www.randomterrain.com/atari-2600-memories-batari-basic-commands.html
+Project quick reference, reviewed **2026-10-10**. Scope: Rescue Terri's standard kernel, with selected other-kernel notes; this is not a complete language manual.
+
+Sources:
+
+- [Upstream source at `efd6dcd319c31a5e37afb00d47c981105998d924`](https://github.com/batari-Basic/batari-Basic/tree/efd6dcd319c31a5e37afb00d47c981105998d924): `keywords.c`, `statements.c`, `preprocess.lex`, and `includes/` are authoritative for this installed build.
+- [Latest release, v1.9](https://github.com/batari-Basic/batari-Basic/releases/tag/v1.9).
+- [batari Basic command manual](https://www.randomterrain.com/atari-2600-memories-batari-basic-commands.html), linked by the upstream README.
+
+The current master still reports `v1.9 (c)2025`, but includes post-release features such as `autodim` and `variable++`/`variable--`, plus parser/function fixes. The original v1.9 release binaries do not include all of these. This project's active WebAssembly compiler was rebuilt from the revision above; native executables match that source too. Recheck upstream before claiming a later installation is current.
+
+All commands used by `rescue_terri.26b` and its five fragments remain supported. Existing `a = a + 1` arithmetic remains current syntax; adopting every new optional feature is unnecessary. The game keeps explicit RAM aliases, standard-kernel playfield collision, and BCD score arithmetic.
+
+Short examples below sometimes omit leading whitespace. In real BASIC files, indent commands and data lines; put labels and block-ending `end` at the left margin, as in the game sources.
 
 ---
 
@@ -8,12 +20,12 @@ Extracted from: https://www.randomterrain.com/atari-2600-memories-batari-basic-c
 
 ### Variables
 - 26 single-byte variables: `a` through `z` (values 0–255)
-- 6 temporary variables: `temp1`–`temp6` — **reset after every `drawscreen`**
-- Playfield variables: `var0`–`var47` (var44–var47 usable as general-purpose if not scrolling)
-- Superchip RAM adds 48 more variables (requires `set romsize 8kSC` or larger SC variant)
+- 6 temporary variables: `temp1`–`temp6` — **clobbered by `drawscreen`, not reset to a guaranteed value**. Library routines may also use them.
+- Playfield variables: `var0`–`var47` alias playfield storage; `var44`–`var47` overlap the default hidden row. `pfclear`, scrolling, and 12-row playfield loads can overwrite them.
+- Superchip supplies 128 cartridge RAM bytes and relocates playfield storage, freeing the 48 base-RAM playfield bytes for general use. It requires an SC ROM configuration and appropriate cartridge/emulator support; the game currently uses plain `16k`.
 
 ### `const`
-Declare a compile-time constant (cannot change at runtime). Limit: 500 constants.
+Declare a compile-time constant (cannot change at runtime). Constants and `dim` aliases share a 500-entry declaration table with generated definitions; leave room for compiler setup instead of treating 500 as an independent constant budget.
 ```
 const _MYCONST = 200
 const _MONSTER_HEIGHT = $12
@@ -44,9 +56,31 @@ def _Show_Title=_Game_Flags{4}
 def _Game_in_Play=_Game_Flags{5}
 def _Game_Over=_Game_Flags{6}
 ```
-- **No spaces around `=`**
-- Limit: 50 defines
+- Both `def _Ready=_Flags{4}` and `def _Ready = _Flags{4}` compile with the current preprocessor.
+- Keep fewer than 500 definitions; names and replacement strings are limited to 99 characters in the current compiler.
 - Strings must be unique (no prefix collisions)
+
+### `autodim` (post-v1.9-release master)
+Allocate aliases consecutively inside a RAM range you explicitly reserve:
+
+```
+  autodim init a z
+  autodim byte _Counter
+  autodim byte _Buffer 4
+  autodim 4.4 _Fraction
+  autodim 8.8 _Position
+```
+
+Types are `byte`, `4.4` (one byte each), and `8.8` (two bytes each). The optional count defaults to 1; the end address is inclusive. Assembly fails if allocations exceed the range. This does not detect overlap with other `dim` aliases or make more RAM available. Rescue Terri already assigns a–z, so do not add this example to the game without redesigning its RAM map.
+
+### Increment/decrement (post-v1.9-release master)
+
+```
+  _Counter++
+  _Counter--
+```
+
+These are standalone byte operations, compiled as 6502 `INC`/`DEC`; they wrap at 255/0. Use ordinary arithmetic for the BCD score (`score = score + 1`) and fixed-point values. They are optional shorthand, not a replacement for general expressions. Verify generated code when converting existing logic.
 
 ### Bit Operations
 Access individual bits with curly braces (bit 0 = rightmost/LSB, bit 7 = leftmost/MSB):
@@ -75,7 +109,7 @@ goto __Move_Monster bank2
 **Cycle cost:** `goto` = 3 cycles; `goto` with bankswitch = 49 cycles.
 
 ### `gosub` / `return`
-Call a subroutine and return. Stack space: 6 bytes total (3 nested calls max).
+Call a subroutine and return. Standard-kernel stack space is limited; three nested same-bank calls is the usual conservative limit, not a universal limit for every kernel. Bankswitched calls use additional stack bytes. Avoid deep nesting, especially around `drawscreen`.
 ```
 gosub __My_Subroutine
 ...
@@ -143,6 +177,49 @@ for x = 10 to 1 step -1
 next
 ```
 
+### `reboot`
+Restart via the ROM reset vector. Rescue Terri uses this for the console Reset switch:
+
+```
+  if switchreset then reboot
+```
+
+## ROM Data and Music Streams
+
+### `data` and indexed access
+
+```
+  data _Pitches
+  26,17,19,23
+end
+  a = _Pitches[b]
+```
+
+The index is a byte. Keep tables and their readers in the same accessible bank.
+
+### `sdata` / `sread`
+
+```
+_setup_stream
+  sdata _Notes = u
+  26,17,19,255
+end
+  a = sread(_Notes)
+```
+
+`sdata _Notes = u` reserves `u` and the following byte `v` as a pointer. Executing that setup initializes the pointer and skips over the ROM bytes. Every `sread(_Notes)` reads one byte and advances the pointer, including across a 256-byte page. Re-enter the setup to rewind; there is no automatic end marker or bounds check. `255` is a sentinel chosen by the game.
+
+Rescue Terri reserves `u/v` for bass and `w/x` for all melody variants. Each melody setup assigns the same `w/x` pointer; `_Title_Melody` reads whichever stream was selected. Keep the reader and stream data in bank 1.
+
+### `rand` / `rerand`
+
+```
+  a = rand
+  rerand
+```
+
+`rand` supplies a random byte. `rerand`, added in v1.9, advances the generator without assigning a result. Neither is needed by the current game's deterministic movement or music.
+
 ---
 
 ## Playfield Commands
@@ -182,7 +259,7 @@ To clear without resetting var44–var47 (extra variables on hidden row 11), use
 - `xpos`: 0–31
 - `ypos`: 0–11 (11 is hidden)
 - `function`: `on`, `off`, or `flip`
-- **Cost:** 80 cycles per frame
+- **Cost:** about 80 cycles per call
 
 ```
 pfpixel 16 2 on
@@ -197,7 +274,7 @@ No bounds checking — exceeding limits may crash the program.
 - `ypos`: row (0–11)
 - `endxpos`: end column — **must be greater than xpos**
 - `function`: `on`, `off`, or `flip`
-- **Cost:** 250–1500 cycles per frame (approx 210 + 42 × length)
+- **Cost:** approximately 210 + 42 × length cycles per call
 
 ```
 pfhline 0 0 31 on     ; full-width top wall
@@ -212,7 +289,7 @@ No bounds checking.
 - `ypos`: start row (0–11)
 - `endypos`: end row — **must be greater than ypos**
 - `function`: `on`, `off`, or `flip`
-- **Cost:** 230–600 cycles per frame (approx 200 + 34 × length)
+- **Cost:** approximately 200 + 34 × length cycles per call
 
 ```
 pfvline 0 0 10 on     ; full-height left wall
@@ -227,8 +304,8 @@ pfscroll left
 pfscroll right
 pfscroll up
 pfscroll down
-pfscroll upup      ; scroll 2 rows up at once
-pfscroll downdown  ; scroll 2 rows down at once
+pfscroll upup      ; scroll up by 2 vertical steps, not 2 full playfield rows
+pfscroll downdown  ; scroll down by 2 vertical steps
 ```
 - `left` / `right`: 500 cycles per call
 - `up` / `down`: 650 cycles every 8th call, 30 cycles otherwise
@@ -483,18 +560,22 @@ rem This is a comment
 ### Compiler Directives (`set`)
 ```
 set kernel DPC+       ; use DPC+ kernel
-set tv NTSC           ; target TV standard
+set tv ntsc           ; default timing; the game uses this implicitly
 set romsize 8k        ; ROM size
 ```
+
+Standard kernel is the default when no `set kernel` is present. `set kernel PXE` is also available in v1.9 for PXE hardware; switching kernels changes graphics, RAM, and banking requirements and is not a routine update for this game. `set tv pal` changes frame timing, so the game's 60-frame timers and music would need review.
 
 ### Kernel Options (`const`)
 ```
 const noscore = 1         ; hide score
-const pfres = 4           ; playfield rows (requires Superchip)
-const pfrowheight = 7     ; pixels per playfield row
+const pfres = 4           ; alternate playfield RAM row count
+const pfrowheight = 7     ; row height in standard-kernel vertical units
 const pfscore = 1         ; enable pfscore bars
 const scorefade = 1       ; enable score fade shading
 ```
+
+`pfres` does not inherently require Superchip; it changes playfield RAM use and display geometry. Check the kernel memory map before increasing it. These examples are independent options, not Rescue Terri's configuration. Graphics options such as `no_blank_lines` use `set kernel_options ...`, not `const`.
 
 ### `include`
 Include an external assembly module:
@@ -503,7 +584,10 @@ include div_mul.asm    ; provides multiplication/division support
 include 6lives.asm
 ```
 
-### Cycle Count Summary (by SeaGtGruff)
+`include` selects assembly modules. `inline` inserts assembly at the current point. Neither concatenates BASIC fragments; this project's `build.sh` combines those in an explicit order.
+
+### Approximate Cycle Count Summary
+Historical estimates from the command manual; actual cost depends on generated code, kernel, and bank-return path. Per-call costs become per-frame costs only when called once each frame.
 | Operation | Cycles |
 |---|---|
 | `goto` | 3 |
@@ -511,8 +595,8 @@ include 6lives.asm
 | `gosub + return` | 12 |
 | `gosub` with bankswitch `+ return` | 122 |
 | `gosub` with bankswitch `+ return otherbank` | 110 |
-| `pfpixel` | 80 / frame |
-| `pfhline` (length n) | ~210 + 42n / frame |
-| `pfvline` (length n) | ~200 + 34n / frame |
+| `pfpixel` | ~80 / call |
+| `pfhline` (length n) | ~210 + 42n / call |
+| `pfvline` (length n) | ~200 + 34n / call |
 | `pfscroll left/right` | 500 / call |
 | `pfscroll up/down` | 650 every 8th call, 30 otherwise |

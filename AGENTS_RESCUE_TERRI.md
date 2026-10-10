@@ -1,5 +1,7 @@
 # Rescue Terri Notes
 
+Reviewed against all six game sources and upstream batari Basic on **2026-10-10**.
+
 ## Build
 
 - Project root: `/Users/luke/code/atari/batari/maze_game`
@@ -14,11 +16,22 @@
 - Keyboard shortcuts live in the local VS Code user `keybindings.json`, not in this repository. A new checkout/machine has the tasks but needs its own shortcut bindings.
 - Do not compile an individual fragment or the entry source directly with Atari Dev Studio's single-file build command. Use the task or `build.sh` so all fragments are included.
 - `build.sh` combines the BASIC sources in the order below before invoking the compiler. The bB `include` command is for assembly modules, not these BASIC fragments.
-- Compiler diagnostics of the form `N: message` or `line N: message` are mapped back to the editable source file and local line number. Assembly-stage diagnostics still refer to generated assembly.
+- Compiler diagnostics of the form `N: message`, `line N: message`, or current `*** ERROR/WARNING  line N: message` are mapped back to the editable source file and local line number. Assembly-stage diagnostics still refer to generated assembly.
 - Build-wrapper tests: `python3 -m unittest discover -s tests -v` (standard library only; uses a fake compiler, not Stella)
 - Current CLI toolchain works in this repo with:
   - batari Basic `v1.9 (c)2025`
   - DASM `2.20.15-SNAPSHOT`
+
+### Verified compiler revision
+
+- [Latest published release: v1.9](https://github.com/batari-Basic/batari-Basic/releases/tag/v1.9), published 2025-10-13.
+- [Latest upstream master: `efd6dcd319c31a5e37afb00d47c981105998d924`](https://github.com/batari-Basic/batari-Basic/commit/efd6dcd319c31a5e37afb00d47c981105998d924), dated 2026-01-08; checked against the remote on 2026-10-10. It includes changes after the v1.9 release while retaining the v1.9 version banner.
+- `2600basic.sh` selects WebAssembly when Wasmtime is available. The five bB `.wasm` tools were rebuilt from that revision with WASI SDK 25 (the version in upstream CI). Native bB executables already matched a fresh build of the same source.
+- The existing local launcher fallback patch is retained. The local native-launcher `dasm` wrapper uses `bB` to find `dasm.wasm`.
+- Local binary hashes and the backup location are recorded in `/Users/luke/opt/batari-Basic/local-build-info.json`; original replaced files are backed up under `/Users/luke/opt/batari-Basic-backups/`.
+- Do not use the version banner alone to verify freshness: the older release binary also reports v1.9 but rejects post-release `variable++` syntax.
+- The game uses supported current commands: `const`, `dim`, `include`, `set romsize`, `if/then`, `goto`, `gosub`, `return thisbank`, `on ... goto`, `bank`, `playfield:`, `pfread`, `pfhline`, `sdata`/`sread`, `reboot`, and `drawscreen`. Arithmetic assignments and direct TIA register writes remain valid. Optional newer commands do not require a gameplay rewrite.
+- Keep the explicit RAM map: `autodim` does not create extra memory. Keep BCD score arithmetic as `score = score + 1`, not `score++`.
 
 ## Source Navigation
 
@@ -57,7 +70,9 @@ These files share one global variable and label namespace. File boundaries do no
   - `.cache/combined/source-map.tsv` - combined starting line and source path for each nonempty fragment
   - `.cache/build.log` - unmodified compiler output from the latest build
 - A failed build preserves the last successful `.bin` and `.a26`; check build status before running a ROM. Generated assembly/listings may reflect the failed attempt.
-- Latest known `rescue_terri.26b` build budget:
+- Obsolete April music-probe source and outputs were moved from `.cache/` to `poc/cache-archive-2026-10-10/`; they are historical experiments, not current game inputs.
+- Refresh generated cache files by running `sh ./build.sh`. Refresh the command reference separately against upstream compiler source and the linked manual; it is tracked documentation, not generated output. `.cache/build.log` describes only the latest build, including standalone builds.
+- Verified `rescue_terri.26b` build budget (2026-10-10):
   - `10 bytes of ROM space left in bank 1`
   - `1159 bytes of ROM space left in bank 2`
   - `4052 bytes of ROM space left in bank 3`
@@ -95,13 +110,13 @@ All 26 registers (a–z) are assigned. Do not use a register without first check
 | q | title_bass_duration | title music bass duration counter |
 | r | title_melody_duration | title music melody duration counter |
 | s | title_music_setup_mode | title music setup return mode |
-| t | title_melody_phrase | current title melody phrase index (0–7) |
+| t | title_melody_phrase | current title melody phrase index (0–15) |
 | u/v | _Title_Bass sdata pointer | title music bass stream pointer |
-| w/x | _Title_Melody/_Title_Melody_2 sdata pointer | title music melody stream pointer |
+| w/x | shared melody sdata pointer | `_Title_Melody`, `_Title_Melody_2`, `_Title_Melody_3`, `_Easter_Egg_Melody`, or `_Victory_Melody` |
 | y | score_frame_counter | frames elapsed since the last score increment |
 | z | easter_egg_found | non-zero after the temple easter egg is found; selects the alternate game-over melody |
 
-Temp variables `temp1`–`temp6` are used within single logical blocks and reset after `drawscreen`. They are re-aliased at point of use (e.g. `dim mid_delta = temp3`).
+Temp variables `temp1`–`temp6` are used within single logical blocks and clobbered by `drawscreen` (not guaranteed to become zero). They are re-aliased at point of use (e.g. `dim mid_delta = temp3`). Playfield/library commands can also use scratch RAM; check their implementation before keeping temps live across a call.
 
 ## Key Constants
 
@@ -128,10 +143,13 @@ MISSLE_WIDTH_BIN = %00100000   ; value for NUSIZ0/NUSIZ1
 PF_SCR_X_OFFSET = 18    PF_SCR_Y_OFFSET = 3
 
 ; Player1 behavior
-P1_MOVE_DELAY      = 3   ; frames between player1 steps toward midpoint
+P1_MOVE_DELAY      = 3   ; skip 3 frames; step on the 4th eligible frame
 P1_GATE_THRESHOLD  = 2   ; how close player1 must be to a doorway to transfer rooms
-COLOR_CYCLE_DELAY  = 12  ; frames per color step during game over
+COLOR_CYCLE_DELAY  = 12  ; advance color on the 13th loop iteration
 SCORE_FRAMES_PER_SECOND = 60 ; frames per score increment
+
+; Win target inside the house (different from the house sprite origin)
+HOUSE_ENTRY_X = 129    HOUSE_ENTRY_Y = 74
 
 ; Input debounce
 J_DEBOUNCE_DELAY = 4
@@ -143,7 +161,7 @@ J_DEBOUNCE_DELAY = 4
 - `player1` is an AI sprite that moves toward the midpoint of missile0 and missile1
 - `player0` is the stationary objective sprite
 - `ball` is only used for the temple easter egg in `ROOM_BOTTOM_LEFT`
-- Game ends when `player1` reaches the same x/y position as `player0` in the same room
+- Victory starts when `player1` reaches `(HOUSE_ENTRY_X, HOUSE_ENTRY_Y) = (129, 74)` in `player0`'s room. The house sprite itself starts at `(127, 75)`.
 - Touching the temple ball triggers the easter egg, swaps the `player1` sprite art, and uses `_Easter_Egg_Melody` instead of `_Victory_Melody`
 - Discovery also clears playfield columns 0–1 in rows 7–8 of `ROOM_BOTTOM_LEFT`, revealing the passage to `ROOM_HIDDEN`. The opening is visible during the celebration.
 - Either fire button resumes play after the easter egg, silences the music, and restores room colors. The passage stays open on subsequent visits until Reset starts a new run.
@@ -153,9 +171,11 @@ J_DEBOUNCE_DELAY = 4
   - `_Title_Bass` on channel 1 (`AUDV1`/`AUDC1`/`AUDF1`)
   - `_Title_Melody` on channel 0 (`AUDV0`/`AUDC0`/`AUDF0`)
   - `_Title_Melody_2` is the second melody section, also on channel 0
+  - `_Title_Melody_3` is the third melody section, also on channel 0
   - Bass phrase is 512 frames
-  - Each melody phrase is 128 frames
-  - Melody section 1 plays 4 times, then melody section 2 plays 4 times, then the title song restarts
+  - Melody sections 1 and 2 are 128 frames each; section 3 is 256 frames
+  - Phrase indices 0–3 play section 1, 4–7 play section 2, 8–11 repeat section 1, and 12–15 play section 3, then wrap to 0 (2560 frames total)
+  - The title playfield changes to white, gold, or teal with melody section 1, 2, or 3 respectively
 
 ## Collision Detection — Two Separate Systems
 
@@ -169,7 +189,7 @@ The coordinate math:
 
 **2. Player1/Player0 game-over collision (position comparison, not hardware):**
 ```
-if p0_room_number = p1_room_number && player1x = player0x && player1y = player0y then goto _start_game_over
+if p0_room_number = p1_room_number && player1x = HOUSE_ENTRY_X && player1y = HOUSE_ENTRY_Y then goto _start_game_over
 ```
 This is a direct variable comparison, not a hardware collision register check.
 
@@ -280,12 +300,12 @@ ROOM_HIDDEN       BLACK / GOLD_LIGHT
 ## Editing Guidance
 
 - **ROM space is tight.** Prefer small, targeted changes. Check `.cache/bB.asm` and `.lst` after building to monitor bank usage.
-- Title music bytes are constrained by bank 1. Bank 2's free space is not directly available for `_Title_Bass`, `_Title_Melody`, or any future `_Title_Melody_3` table unless the playback code is redesigned around bank switching.
+- Title music bytes are constrained by bank 1. Bank 2's free space is not directly available for `_Title_Bass` or the three existing title melody tables unless the playback code is redesigned around bank switching.
 - When adding a room: update bank 1 boundary routing AND add the room init block in bank 2
 - When adding a room connection: update the boundary check for both rooms involved
 - When changing room geometry: keep `maze.txt` and the matching 32×11 `playfield:` block in sync
 - Keep sprite colors readable against each room's background/playfield colors
 - There are currently no free registers; all new variable aliases must reuse an existing register only when the usage does not overlap
 - Do not reuse `u`/`v` or `w`/`x` for frame-to-frame state while title music is active; they are `sdata` pointers
-- Temp variables (`temp1`–`temp6`) are safe to re-alias within a block but are reset by `drawscreen` — never rely on them across frames
+- Temp variables (`temp1`–`temp6`) are safe to re-alias within a block but are clobbered by `drawscreen` — never rely on them across frames
 - Do not use `collision()` for wall detection — the manual `pfread()` system is intentional and required for the coordinate-based approach

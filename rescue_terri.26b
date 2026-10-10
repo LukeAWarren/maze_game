@@ -1,5 +1,7 @@
   ; Build: sh ./build.sh. Build and run in Stella: sh ./run.sh (local VS Code F5).
   ; See AGENTS_RESCUE_TERRI.md for the src/ file guide and compilation order.
+  ; Verified with batari Basic v1.9, upstream efd6dcd (2026-10-10).
+  ; Uses the standard kernel and default NTSC timing (60 frames/second).
 
   include div_mul.asm
   set romsize 16k
@@ -48,7 +50,7 @@
   ; current room the missiles are in
   dim mi_room_number = e
 
-  ; a bunch of registeres for dealing with the p1 object
+  ; RAM aliases for the p1 object
   dim p1_room_number = f
 
   dim p1_y = g
@@ -175,7 +177,7 @@
   const J_DEBOUNCE_DELAY = 4
 
   ; a bunch of p1 constants
-  ; elapsed frames between player1 movements towards the midpoint
+  ; skip three frames, then move player1 toward the midpoint on the fourth
   const P1_MOVE_DELAY = 3
   const P1_GATE_THRESHOLD = 2 ; how close the p1 sprite is to the gate to pass through
   const COLOR_CYCLE_DELAY = 12

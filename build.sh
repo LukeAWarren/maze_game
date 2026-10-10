@@ -90,15 +90,21 @@ fi
 if [ -n "$SOURCE_MAP" ]; then
   awk -F '\t' '
     NR == FNR { starts[++count] = $1 + 0; files[count] = $2; next }
-    /^(line +)?[0-9]+:/ {
+    /^((\*\*\* (ERROR|WARNING) +)?line +)?[0-9]+:/ {
+      severity = ""
+      if ($0 ~ /^\*\*\* /) {
+        severity = $0
+        sub(/^\*\*\* /, "", severity)
+        sub(/ +line .*/, ": ", severity)
+      }
       line = $0
-      sub(/^line +/, "", line)
+      sub(/^(\*\*\* (ERROR|WARNING) +)?line +/, "", line)
       sub(/:.*/, "", line)
       line += 0
       for (i = count; i > 1 && starts[i] > line; i--) {}
       message = $0
-      sub(/^(line +)?[0-9]+: */, "", message)
-      printf "%s:%d: %s\n", files[i], line - starts[i] + 1, message
+      sub(/^((\*\*\* (ERROR|WARNING) +)?line +)?[0-9]+: */, "", message)
+      printf "%s:%d: %s%s\n", files[i], line - starts[i] + 1, severity, message
       next
     }
     { print }

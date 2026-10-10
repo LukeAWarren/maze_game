@@ -206,6 +206,22 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(self.rom.read_bytes(), original)
         self.assertEqual(self.a26.read_bytes(), original)
 
+    def test_current_compiler_diagnostics_preserve_severity_and_source_location(self):
+        music_start = 1 + sum(
+            len((self.root / name).read_text().splitlines()) for name in SOURCES[:3]
+        )
+        diagnostics = (
+            f"*** WARNING  line {music_start}: test warning\n"
+            f"*** ERROR  line {music_start + 4}: test error"
+        )
+        result = self.build(FAKE_DIAGNOSTICS=diagnostics, FAKE_MODE="fail")
+        self.assertEqual(result.returncode, 7)
+        self.assertEqual(result.stdout.splitlines(), [
+            f"{self.root / 'src/music.26b'}:1: WARNING: test warning",
+            f"{self.root / 'src/music.26b'}:5: ERROR: test error",
+        ])
+        self.assertEqual((self.root / ".cache/build.log").read_text().strip(), diagnostics)
+
     def test_missing_rom_is_a_failure_even_with_old_compiler_output(self):
         self.assert_success(self.build())
         original = self.rom.read_bytes()
