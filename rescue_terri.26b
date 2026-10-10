@@ -6,10 +6,6 @@
   include div_mul.asm
   set romsize 16k
 
-  ; Temporary treasure-room testing: 1 starts both missiles and Terri in the temple.
-  ; Set to 0 and rebuild to restore the original full-game start in ROOM_RIGHT.
-  const TEST_START_IN_TEMPLE = 1
-
   ; room colors
   const BLACK = $00
   const WHITE = $0E

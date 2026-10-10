@@ -5,29 +5,6 @@
 
   ; Room playfields are 32 columns by 11 rows. X = wall, . = open floor.
 
-_start_game_room
-  ; Compile-time switch keeps the test setup out of the nearly full bank 1.
-  asm
-  if TEST_START_IN_TEMPLE
-end
-  ; Open floor just above the temple ball. Terri starts at the missiles' midpoint.
-  missile0x = 34
-  missile0y = 49
-  missile1x = 50
-  missile1y = 49
-  player1x = 41
-  player1y = 49
-  p1_y = 49
-  p1_room_number = ROOM_BOTTOM_LEFT
-  goto _room_bottom_left
-  asm
-  else
-end
-  goto _inititial_game_room
-  asm
-  endif
-end
-
 _temple_right_exit
   if mi_room_number = ROOM_HIDDEN then goto _room_bottom_left
   goto _room_bottom

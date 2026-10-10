@@ -35,13 +35,11 @@ Reviewed against all six game sources and upstream batari Basic on **2026-10-10*
 
 ## Source Navigation
 
-### Temporary temple start for treasure-room development
+### Starting a game
 
-- **Currently enabled:** `const TEST_START_IN_TEMPLE = 1` near the top of `rescue_terri.26b`.
-- Starting from the title screen places both player-controlled missiles and Terri in `_room_bottom_left` (the temple), on open floor just above the ball: missile0 `(34,49)`, missile1 `(50,49)`, Terri `(41,49)`.
-- Bring Terri to the exact ball capture anchor `(39,55)` (two pixels left and six down from the test spawn), then use fire to resume after discovery. The normal passage to `_room_hidden` opens on the left. The ball/discovery sequence remains active; the house stays in `ROOM_RIGHT`.
-- **Restore the full game:** change only `TEST_START_IN_TEMPLE` to `0`, then run `sh ./build.sh` or `sh ./run.sh`. This restores the original room, missile positions, and Terri position. Reset returns to the title and uses the selected start mode again.
-- `_start_game` in `src/screens.26b` enters `_start_game_room` in bank 2. The assembler conditional there selects the test setup or the original `_inititial_game_room`; it adds no RAM state or bank 1 test logic.
+- Starting from the title screen places both player-controlled missiles and Terri in `ROOM_RIGHT` at their original positions: missile0 `(100,65)`, missile1 `(100,25)`, Terri `(99,45)`. The house starts at `(127,75)`.
+- `_start_game` in `src/screens.26b` initializes these positions using the `START_*` constants and enters `_inititial_game_room` in bank 2. Console Reset returns to the title screen.
+- The temporary temple-start switch and positioning code have been removed.
 
 These files share one global variable and label namespace. Explicit `bank` declarations in `src/rooms.26b` and `src/music.26b` select banks 2 and 3; the build order must keep those declarations after all bank 1 code.
 
@@ -82,7 +80,7 @@ These files share one global variable and label namespace. Explicit `bank` decla
 - Refresh generated cache files by running `sh ./build.sh`. Refresh the command reference separately against upstream compiler source and the linked manual; it is tracked documentation, not generated output. `.cache/build.log` describes only the latest build, including standalone builds.
 - Verified `rescue_terri.26b` build budget (2026-10-10):
   - `566 bytes of ROM space left in bank 1`
-  - `1189 bytes of ROM space left in bank 2` (temple test start enabled; 1221 with it disabled)
+  - `1224 bytes of ROM space left in bank 2`
   - `3292 bytes of ROM space left in bank 3`
   - `2702 bytes of ROM space left in bank 4`
 
@@ -239,7 +237,7 @@ Use the source playfields as authoritative: the main `maze.txt` grid still conta
 - **Bank 2:** room setup, temple/hidden-room exit selection, passage reveal, and celebration/resume color helpers
 - **Bank 3:** two-channel music playback, stream setup, and bass/title/victory/easter-egg data
 - **Bank 4:** compiler-provided kernel and sprite graphics
-- `_start_game_room` selects the new-game start using `TEST_START_IN_TEMPLE`; `_inititial_game_room` is the original `ROOM_RIGHT` playfield/data entry used when the test start is disabled
+- `_start_game` enters `_inititial_game_room` directly to load the original `ROOM_RIGHT` playfield and colors
 
 Each bank 2 room routine ends with `goto _end_boundary_check bank1` to return to the main loop.
 
