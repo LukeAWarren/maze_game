@@ -81,9 +81,9 @@ These files share one global variable and label namespace. Explicit `bank` decla
 - Obsolete April music-probe source and outputs were moved from `.cache/` to `poc/cache-archive-2026-10-10/`; they are historical experiments, not current game inputs.
 - Refresh generated cache files by running `sh ./build.sh`. Refresh the command reference separately against upstream compiler source and the linked manual; it is tracked documentation, not generated output. `.cache/build.log` describes only the latest build, including standalone builds.
 - Verified `rescue_terri.26b` build budget (2026-10-10):
-  - `574 bytes of ROM space left in bank 1`
+  - `566 bytes of ROM space left in bank 1`
   - `1189 bytes of ROM space left in bank 2` (temple test start enabled; 1221 with it disabled)
-  - `3288 bytes of ROM space left in bank 3`
+  - `3292 bytes of ROM space left in bank 3`
   - `2702 bytes of ROM space left in bank 4`
 
 ## Local References
@@ -110,7 +110,7 @@ All 26 registers (a–z) are assigned. Do not use a register without first check
 | i | p1_dy | player1 y movement direction (-1, 0, 1) |
 | j | p1_move_counter | frames elapsed since last player1 move |
 | k | p0_room_number | room player0 (objective) is currently in |
-| l | game_over | 0 = playing, non-zero = game over |
+| l | game_over | 0 = playing, GAME_OVER_VICTORY=1 = final victory, GAME_OVER_EASTER_EGG=2 = egg discovery celebration |
 | m | color_cycle | current color index during game over (0–8) |
 | n | color_cycle_timer | frames elapsed in current color step |
 | o | p0_y | saved y position of player0 when hidden |
@@ -174,7 +174,8 @@ J_DEBOUNCE_DELAY = 4
 - Victory starts when `player1` reaches `(HOUSE_ENTRY_X, HOUSE_ENTRY_Y) = (129, 74)` in `player0`'s room. The house sprite itself starts at `(127, 75)`.
 - Centering the temple ball inside Terri's hollow square triggers the easter egg: `player1x = TEMPLE_BALL_CAPTURE_X` and `player1y = TEMPLE_BALL_CAPTURE_Y`, exactly `(39,55)`, in `ROOM_BOTTOM_LEFT`. Edge contact does not collect it. This swaps the `player1` sprite art and uses `_Easter_Egg_Melody` instead of `_Victory_Melody`.
 - Discovery also clears playfield columns 0–1 in rows 7–8 of `ROOM_BOTTOM_LEFT`, revealing the passage to `ROOM_HIDDEN`. The opening is visible during the celebration.
-- Either fire button resumes play after the easter egg, silences the music, and restores room colors. The passage stays open on subsequent visits until Reset starts a new run.
+- Either fire button resumes play during the egg discovery celebration (`GAME_OVER_EASTER_EGG`), silences the music, and restores room colors. The passage stays open on subsequent visits until Reset starts a new run.
+- Final victory (`GAME_OVER_VICTORY`) ignores both fire buttons, including after the egg was collected; music and color cycling continue until Console Reset. Keep this celebration state separate from the persistent `easter_egg_found` flag, which still selects the alternate victory melody.
 - Game over freezes play and cycles the room colors through 9 presets
 - Title screen is active until either fire button is pressed
 - Title screen plays two-voice music:
@@ -311,7 +312,7 @@ ROOM_HIDDEN       BLACK / GOLD_LIGHT
 ## Editing Guidance
 
 - **ROM space is tight.** Prefer small, targeted changes. Check `.cache/bB.asm` and `.lst` after building to monitor bank usage.
-- Music code and tables share bank 3, with 3288 bytes currently free. Add streams there alongside their readers; bank 2's free space is not directly available to bank 3 `sread()` calls.
+- Music code and tables share bank 3, with 3292 bytes currently free. Add streams there alongside their readers; bank 2's free space is not directly available to bank 3 `sread()` calls.
 - When adding a room: update bank 1 boundary routing AND add the room init block in bank 2
 - When adding a room connection: update the boundary check for both rooms involved
 - When changing room geometry: keep `maze.txt` and the matching 32×11 `playfield:` block in sync

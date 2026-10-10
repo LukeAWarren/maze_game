@@ -38,7 +38,7 @@ _temple_left_exit
 
 _reveal_hidden_passage
   gosub _open_hidden_passage
-  goto _start_game_over bank1
+  goto _start_easter_egg_celebration bank1
 
 _open_hidden_passage
   pfhline 0 7 1 off

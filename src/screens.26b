@@ -1,5 +1,11 @@
+_start_easter_egg_celebration
+  game_over = GAME_OVER_EASTER_EGG
+  goto _start_celebration
+
 _start_game_over
-  game_over = 1
+  game_over = GAME_OVER_VICTORY
+
+_start_celebration
   color_cycle = 0
   color_cycle_timer = 0
   title_music_setup_mode = TITLE_MUSIC_SETUP_INIT
@@ -16,8 +22,11 @@ _game_over_colors
   COLUP1 = PINK
   goto _show_game_over_colors bank2
 _after_victory_music
-  if easter_egg_found && joy0fire then goto _resume_after_easter_egg bank2
-  if easter_egg_found && joy1fire then goto _resume_after_easter_egg bank2
+  ; Finding the egg is permanent; only its discovery celebration can resume play.
+  if game_over <> GAME_OVER_EASTER_EGG then goto _draw_celebration
+  if joy0fire then goto _resume_after_easter_egg bank2
+  if joy1fire then goto _resume_after_easter_egg bank2
+_draw_celebration
   drawscreen
   goto mainloop
 
