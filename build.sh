@@ -69,9 +69,9 @@ if [ "$COMPILE_SOURCE" = "$SCRIPT_DIR/rescue_terri.26b" ]; then
     "$SCRIPT_DIR/rescue_terri.26b" \
     "$SCRIPT_DIR/src/gameplay.26b" \
     "$SCRIPT_DIR/src/screens.26b" \
-    "$SCRIPT_DIR/src/music.26b" \
     "$SCRIPT_DIR/src/room_exits.26b" \
-    "$SCRIPT_DIR/src/rooms.26b"
+    "$SCRIPT_DIR/src/rooms.26b" \
+    "$SCRIPT_DIR/src/music.26b"
 elif [ "$SOURCE_DIR" = "$SCRIPT_DIR/src" ]; then
   echo "### ERROR: Build the whole game with sh ./build.sh, not a source fragment." >&2
   exit 1

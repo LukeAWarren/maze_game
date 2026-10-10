@@ -1,3 +1,5 @@
+  bank 3
+
 _title_music_loop
   title_bass_duration = title_bass_duration - 1
   if title_bass_duration then goto _after_title_bass
@@ -5,16 +7,12 @@ _title_music_loop
 _read_title_bass_event
   temp4 = sread(_Title_Bass)
   if temp4 = 255 then title_music_setup_mode = TITLE_MUSIC_SETUP_BASS : goto _title_bass_setup
-  if temp4 then goto _title_bass_note
-  AUDV1 = 0
-  title_bass_duration = 4
-  goto _after_title_bass
-
-_title_bass_note
-  AUDV1 = 8
-  AUDF1 = temp4
-  title_bass_duration = 28
-  goto _after_title_bass
+  temp5 = sread(_Title_Bass)
+  temp6 = sread(_Title_Bass)
+  AUDV1 = temp4
+  AUDC1 = temp5
+  AUDF1 = temp6
+  title_bass_duration = sread(_Title_Bass)
 
 _after_title_bass
   title_melody_duration = title_melody_duration - 1
@@ -42,54 +40,83 @@ _next_title_melody_phrase
   goto _title_melody_setup
 
 _after_title_melody
-  if game_over then goto _after_victory_music
-  goto _after_title_music
+  if game_over then goto _after_victory_music bank1
+  goto _after_title_music bank1
 
 _title_bass_setup
   sdata _Title_Bass = u
-  ; Exact bass pitches with explicit rests. Playback code supplies the
-  ; fixed 28-frame note and 4-frame rest timing so the audible line stays
-  ; unchanged without needing extra state.
+  ; Notes use volume, control, frequency, then duration in frames.
   ; G
-  26
-  0
-  17
-  0
-  26
-  0
-  17
-  0
+  8,12,26
+  28
+  0,0,0
+  4
+  8,12,17
+  28
+  0,0,0
+  4
+  8,12,26
+  28
+  0,0,0
+  4
+  8,12,17
+  28
+  0,0,0
+  4
   ; C
-  19
-  0
-  26
-  0
-  19
-  0
-  26
-  0
+  8,12,19
+  28
+  0,0,0
+  4
+  8,12,26
+  28
+  0,0,0
+  4
+  8,12,19
+  28
+  0,0,0
+  4
+  8,12,26
+  28
+  0,0,0
+  4
   ; G
-  26
-  0
-  17
-  0
-  26
-  0
-  17
-  0
-  ; C
-  17
-  0
-  23
-  0
-  17
-  0
-  23
-  0
+  8,12,26
+  28
+  0,0,0
+  4
+  8,12,17
+  28
+  0,0,0
+  4
+  8,12,26
+  28
+  0,0,0
+  4
+  8,12,17
+  28
+  0,0,0
+  4
+  ; D
+  8,12,17
+  28
+  0,0,0
+  4
+  8,12,23
+  28
+  0,0,0
+  4
+  8,12,17
+  28
+  0,0,0
+  4
+  8,12,23
+  28
+  0,0,0
+  4
   255
 end
   AUDV1 = 0
-  AUDC1 = 12
   title_bass_duration = 1
   if title_music_setup_mode = TITLE_MUSIC_SETUP_INIT && game_over then goto _select_game_over_melody
   if title_music_setup_mode = TITLE_MUSIC_SETUP_INIT then goto _title_melody_setup
@@ -119,7 +146,7 @@ _title_melody_setup
   255
 end
   title_melody_duration = 1
-  if title_music_setup_mode = TITLE_MUSIC_SETUP_INIT then goto mainloop
+  if title_music_setup_mode = TITLE_MUSIC_SETUP_INIT then goto mainloop bank1
   goto _read_title_melody_event
 
 _title_melody_2_setup
@@ -210,6 +237,6 @@ _victory_melody_setup
 end
 _game_over_melody_ready
   title_melody_duration = 1
-  if title_music_setup_mode = TITLE_MUSIC_SETUP_INIT then goto _game_over
+  if title_music_setup_mode = TITLE_MUSIC_SETUP_INIT then goto _game_over bank1
   goto _read_title_melody_event
 

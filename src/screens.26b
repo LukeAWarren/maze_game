@@ -3,7 +3,7 @@ _start_game_over
   color_cycle = 0
   color_cycle_timer = 0
   title_music_setup_mode = TITLE_MUSIC_SETUP_INIT
-  goto _title_bass_setup
+  goto _title_bass_setup bank3
 
 _game_over
   if color_cycle_timer < COLOR_CYCLE_DELAY then color_cycle_timer = color_cycle_timer + 1 : goto _game_over_colors
@@ -23,7 +23,7 @@ _after_victory_music
 
 _title_loop
   if joy0fire || joy1fire then goto _start_game
-  goto _title_music_loop
+  goto _title_music_loop bank3
 _after_title_music
   COLUP0 = BLUE
   COLUP1 = PINK
@@ -74,5 +74,5 @@ _title_screen
 end
  title_music_setup_mode = TITLE_MUSIC_SETUP_INIT
  title_melody_phrase = 0
- goto _title_bass_setup
+ goto _title_bass_setup bank3
 

@@ -43,22 +43,22 @@ Reviewed against all six game sources and upstream batari Basic on **2026-10-10*
 - **Restore the full game:** change only `TEST_START_IN_TEMPLE` to `0`, then run `sh ./build.sh` or `sh ./run.sh`. This restores the original room, missile positions, and Terri position. Reset returns to the title and uses the selected start mode again.
 - `_start_game` in `src/screens.26b` enters `_start_game_room` in bank 2. The assembler conditional there selects the test setup or the original `_inititial_game_room`; it adds no RAM state or bank 1 test logic.
 
-These files share one global variable and label namespace. File boundaries do not introduce bank switches or change execution order.
+These files share one global variable and label namespace. Explicit `bank` declarations in `src/rooms.26b` and `src/music.26b` select banks 2 and 3; the build order must keep those declarations after all bank 1 code.
 
 | Compilation order | File | Contents | ROM bank |
 |---|---|---|---|
 | 1 | [rescue_terri.26b](rescue_terri.26b) | Constants, RAM aliases, sprite setup, startup | 1 |
 | 2 | [src/gameplay.26b](src/gameplay.26b) | Main loop, joystick/wall checks, Terri AI, score, ball blink and discovery | 1 |
 | 3 | [src/screens.26b](src/screens.26b) | Title screen, celebration flow, fire-button handling, starting a game | 1 |
-| 4 | [src/music.26b](src/music.26b) | Two-channel playback and title, easter-egg, and victory song data | 1 |
-| 5 | [src/room_exits.26b](src/room_exits.26b) | Room boundary checks and transition dispatch | 1 |
-| 6 | [src/rooms.26b](src/rooms.26b) | Bank 2 declaration, room loaders/playfields, doorway placement, colors, hidden passage | 2 |
+| 4 | [src/room_exits.26b](src/room_exits.26b) | Room boundary checks and transition dispatch | 1 |
+| 5 | [src/rooms.26b](src/rooms.26b) | Bank 2 declaration, room loaders/playfields, doorway placement, colors, hidden passage | 2 |
+| 6 | [src/music.26b](src/music.26b) | Bank 3 declaration, two-channel playback and all song data | 3 |
 
-- To change a song, look for its `sdata` block in `src/music.26b`. The bass still uses the existing compressed pitch/rest format.
+- To change a song, look for its `sdata` block in `src/music.26b`. Bass and melodies all use four-byte events: volume, control, frequency, and duration in frames. Match the existing two-line layout (`8,12,26` then `28`); rests use `0,0,0` then their duration. A single `255` ends each stream. Keep the bass chord comments above their sections.
 - To edit the Temple Room, find `_room_bottom_left` in `src/rooms.26b`; the Treasure Room is `_room_hidden` in the same file.
 - Keep playfields with their room loader. `maze.txt` is a reference, not compiler input.
 - To add/reorder a fragment, update the explicit list in `build.sh`. Never compile a glob of `src/*.26b`; alphabetical order is not execution order.
-- The source split leaves ROM banks, gameplay, and audio unchanged. Moving music into bank 3 and adding treasure-room music are separate future changes.
+- Music playback and all streams now occupy bank 3. Adding treasure-room music remains a separate future change.
 
 ## Build Outputs
 
@@ -81,9 +81,9 @@ These files share one global variable and label namespace. File boundaries do no
 - Obsolete April music-probe source and outputs were moved from `.cache/` to `poc/cache-archive-2026-10-10/`; they are historical experiments, not current game inputs.
 - Refresh generated cache files by running `sh ./build.sh`. Refresh the command reference separately against upstream compiler source and the linked manual; it is tracked documentation, not generated output. `.cache/build.log` describes only the latest build, including standalone builds.
 - Verified `rescue_terri.26b` build budget (2026-10-10):
-  - `38 bytes of ROM space left in bank 1`
+  - `574 bytes of ROM space left in bank 1`
   - `1124 bytes of ROM space left in bank 2` (temple test start enabled; 1156 with it disabled)
-  - `4052 bytes of ROM space left in bank 3`
+  - `3304 bytes of ROM space left in bank 3`
   - `2702 bytes of ROM space left in bank 4`
 
 ## Local References
@@ -181,7 +181,7 @@ J_DEBOUNCE_DELAY = 4
   - `_Title_Melody` on channel 0 (`AUDV0`/`AUDC0`/`AUDF0`)
   - `_Title_Melody_2` is the second melody section, also on channel 0
   - `_Title_Melody_3` is the third melody section, also on channel 0
-  - Bass phrase is 512 frames
+  - Bass phrase is 512 frames; its 16 notes retain 28 sounding frames plus a 4-frame rest each, with timing now specified in the data rather than hard-coded in playback
   - Melody sections 1 and 2 are 128 frames each; section 3 is 256 frames
   - Phrase indices 0–3 play section 1, 4–7 play section 2, 8–11 repeat section 1, and 12–15 play section 3, then wrap to 0 (2560 frames total)
   - The title playfield changes to white, gold, or teal with melody section 1, 2, or 3 respectively
@@ -235,7 +235,7 @@ Use the source playfields as authoritative: the main `maze.txt` grid still conta
 - `set romsize 16k` - 4 banks of 4K each
 - **Bank 1:** everything that runs every frame (input, AI, p0/p1 logic, game-over, title loop, boundary-check dispatch stubs)
 - **Bank 2:** room setup, temple/hidden-room exit selection, passage reveal, and celebration/resume color helpers
-- **Bank 3:** currently unused
+- **Bank 3:** two-channel music playback, stream setup, and bass/title/victory/easter-egg data
 - **Bank 4:** compiler-provided kernel and sprite graphics
 - `_start_game_room` selects the new-game start using `TEST_START_IN_TEMPLE`; `_inititial_game_room` is the original `ROOM_RIGHT` playfield/data entry used when the test start is disabled
 
@@ -244,7 +244,7 @@ Each bank 2 room routine ends with `goto _end_boundary_check bank1` to return to
 **Cost:** `goto bankN` = 49 cycles per jump. A room transition jumps to bank 2 and back; celebration colors also use bank 2. Keep cross-bank jumps to a minimum.
 
 **Important:** Data tables can only be accessed from within the same bank they are defined in.
-That means free ROM in bank 2 cannot directly hold title music streams read every frame by bank 1 with `sread()` unless the playback design is changed to explicitly bank-switch around that data.
+Music readers and all `sdata` streams therefore live together in bank 3. Bank 1 enters music with `goto ... bank3`; music returns to title/celebration flow with `goto ... bank1`. Bank 2 celebration colors enter `_title_music_loop bank3`. Keep these cross-bank destinations explicit.
 
 ## Room Logic
 
@@ -309,7 +309,7 @@ ROOM_HIDDEN       BLACK / GOLD_LIGHT
 ## Editing Guidance
 
 - **ROM space is tight.** Prefer small, targeted changes. Check `.cache/bB.asm` and `.lst` after building to monitor bank usage.
-- Title music bytes are constrained by bank 1. Bank 2's free space is not directly available for `_Title_Bass` or the three existing title melody tables unless the playback code is redesigned around bank switching.
+- Music code and tables share bank 3, with 3304 bytes currently free. Add streams there alongside their readers; bank 2's free space is not directly available to bank 3 `sread()` calls.
 - When adding a room: update bank 1 boundary routing AND add the room init block in bank 2
 - When adding a room connection: update the boundary check for both rooms involved
 - When changing room geometry: keep `maze.txt` and the matching 32×11 `playfield:` block in sync

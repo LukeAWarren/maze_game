@@ -209,7 +209,7 @@ end
 
 `sdata _Notes = u` reserves `u` and the following byte `v` as a pointer. Executing that setup initializes the pointer and skips over the ROM bytes. Every `sread(_Notes)` reads one byte and advances the pointer, including across a 256-byte page. Re-enter the setup to rewind; there is no automatic end marker or bounds check. `255` is a sentinel chosen by the game.
 
-Rescue Terri reserves `u/v` for bass and `w/x` for all melody variants. Each melody setup assigns the same `w/x` pointer; `_Title_Melody` reads whichever stream was selected. Keep the reader and stream data in bank 1.
+Rescue Terri reserves `u/v` for bass and `w/x` for all melody variants. Each melody setup assigns the same `w/x` pointer; `_Title_Melody` reads whichever stream was selected. Keep the reader and stream data together in bank 3, where this project now places all music.
 
 ### `rand` / `rerand`
 

@@ -15,9 +15,9 @@ SOURCES = (
     "rescue_terri.26b",
     "src/gameplay.26b",
     "src/screens.26b",
-    "src/music.26b",
     "src/room_exits.26b",
     "src/rooms.26b",
+    "src/music.26b",
 )
 FAKE_COMPILER = """#!/bin/sh
 set -eu
@@ -208,7 +208,7 @@ class BuildTests(unittest.TestCase):
 
     def test_current_compiler_diagnostics_preserve_severity_and_source_location(self):
         music_start = 1 + sum(
-            len((self.root / name).read_text().splitlines()) for name in SOURCES[:3]
+            len((self.root / name).read_text().splitlines()) for name in SOURCES[:SOURCES.index("src/music.26b")]
         )
         diagnostics = (
             f"*** WARNING  line {music_start}: test warning\n"

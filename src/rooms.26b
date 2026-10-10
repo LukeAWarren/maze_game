@@ -111,7 +111,7 @@ _color_hidden
   goto _return_from_color_helper
 
 _return_from_color_helper
-  if color_return_mode then goto _title_music_loop bank1
+  if color_return_mode then goto _title_music_loop bank3
   goto _end_boundary_check bank1
 
 _room_right
