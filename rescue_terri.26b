@@ -94,7 +94,7 @@
   ; Anchor that centers the 2x2 ball inside Terri's 4x4 hollow square.
   ; Standard-kernel player pixels start one pixel right of the ball's x origin.
   const TEMPLE_BALL_CAPTURE_X = TEMPLE_BALL_X - 2
-  const TEMPLE_BALL_CAPTURE_Y = TEMPLE_BALL_Y + 1
+  const TEMPLE_BALL_CAPTURE_Y = TEMPLE_BALL_Y + 2
   const TEMPLE_BALL_VISIBLE_FRAMES = 45
   const STATE_TITLE = 0
   const STATE_PLAY = 1
