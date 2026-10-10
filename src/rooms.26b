@@ -399,14 +399,14 @@ _room_hidden
   playfield:
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
     X..............................X
+    X..................XX.....XX...X
+    X...................XXXXXXX....X
+    X...X.......X...XXX..XXXXX.....X
+    X...X.......X.X.X.....XXX......X
+    X...X...X.X.XX..XX.....X.......X
+    X...X...X.X.X.X.X......X........
+    X...XXX.XXX.X.X.XXX...XXX.......
     X..............................X
-    X..........XX.....XX...........X
-    X...........XXXXXXX............X
-    X............XXXXX.............X
-    X.............XXX..............X
-    X..............X................
-    X..............X................
-    X.............XXX..............X
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 end
   goto _end_boundary_check bank1
