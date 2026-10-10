@@ -187,7 +187,12 @@
   ; a bunch of p1 constants
   ; skip three frames, then move player1 toward the midpoint on the fourth
   const P1_MOVE_DELAY = 3
-  const P1_GATE_THRESHOLD = 2 ; how close the p1 sprite is to the gate to pass through
+  const P1_GATE_FOLLOW_DISTANCE = 8 ; how far inside an exit Terri can be and still follow
+  const P1_FOLLOW_LEFT_X = SCR_LEFT_X + P1_GATE_FOLLOW_DISTANCE
+  const P1_FOLLOW_RIGHT_X = SCR_RIGHT_X - P1_GATE_FOLLOW_DISTANCE
+  const P1_FOLLOW_TOP_Y = SCR_TOP_Y + P1_GATE_FOLLOW_DISTANCE
+  const P1_FOLLOW_BOT_Y = SCR_BOT_Y - P1_GATE_FOLLOW_DISTANCE
+  const P1_GATE_THRESHOLD = 2 ; arrival offset inside the destination doorway
   const COLOR_CYCLE_DELAY = 12
   const SCORE_FRAMES_PER_SECOND = 60
 

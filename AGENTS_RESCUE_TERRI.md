@@ -82,8 +82,8 @@ These files share one global variable and label namespace. Explicit `bank` decla
 - Refresh generated cache files by running `sh ./build.sh`. Refresh the command reference separately against upstream compiler source and the linked manual; it is tracked documentation, not generated output. `.cache/build.log` describes only the latest build, including standalone builds.
 - Verified `rescue_terri.26b` build budget (2026-10-10):
   - `574 bytes of ROM space left in bank 1`
-  - `1124 bytes of ROM space left in bank 2` (temple test start enabled; 1156 with it disabled)
-  - `3304 bytes of ROM space left in bank 3`
+  - `1189 bytes of ROM space left in bank 2` (temple test start enabled; 1221 with it disabled)
+  - `3288 bytes of ROM space left in bank 3`
   - `2702 bytes of ROM space left in bank 4`
 
 ## Local References
@@ -153,7 +153,8 @@ PF_SCR_X_OFFSET = 18    PF_SCR_Y_OFFSET = 3
 
 ; Player1 behavior
 P1_MOVE_DELAY      = 3   ; skip 3 frames; step on the 4th eligible frame
-P1_GATE_THRESHOLD  = 2   ; how close player1 must be to a doorway to transfer rooms
+P1_GATE_FOLLOW_DISTANCE = 8 ; maximum distance inward from the exit boundary
+P1_GATE_THRESHOLD  = 2   ; arrival offset inside the destination doorway
 COLOR_CYCLE_DELAY  = 12  ; advance color on the 13th loop iteration
 SCORE_FRAMES_PER_SECOND = 60 ; frames per score increment
 
@@ -252,7 +253,8 @@ Music readers and all `sdata` streams therefore live together in bank 3. Bank 1 
 - `ROOM_BOTTOM_LEFT` and `ROOM_HIDDEN` share horizontal edge checks. Bank 2 routes their exits; entry to the hidden room requires `easter_egg_found`.
 - Missile repositioning for the new room happens inside the bank 2 room init label
 - Player1 doorway-follow logic also lives inside the destination room init block
-- Player1 is pulled through a doorway only if it is in the room being left, visible, and within `P1_GATE_THRESHOLD`
+- Player1 follows through a doorway if it is in the room being left, visible, and within `P1_GATE_FOLLOW_DISTANCE = 8` coordinate units inward from the exit boundary. The checks are inclusive and consistent: left `x <= 26`, right `x >= 134`, top `y <= 12`, bottom `y >= 79`.
+- Adjust `P1_GATE_FOLLOW_DISTANCE` in `rescue_terri.26b` to tune how forgiving departures are. `P1_GATE_THRESHOLD = 2` controls arrival placement separately, so widening the follow zone does not move Terri deeper into the destination room.
 - Horizontal transfers preserve `player1y`; vertical transfers preserve `player1x`
 
 ## Current Room Map
@@ -309,7 +311,7 @@ ROOM_HIDDEN       BLACK / GOLD_LIGHT
 ## Editing Guidance
 
 - **ROM space is tight.** Prefer small, targeted changes. Check `.cache/bB.asm` and `.lst` after building to monitor bank usage.
-- Music code and tables share bank 3, with 3304 bytes currently free. Add streams there alongside their readers; bank 2's free space is not directly available to bank 3 `sread()` calls.
+- Music code and tables share bank 3, with 3288 bytes currently free. Add streams there alongside their readers; bank 2's free space is not directly available to bank 3 `sread()` calls.
 - When adding a room: update bank 1 boundary routing AND add the room init block in bank 2
 - When adding a room connection: update the boundary check for both rooms involved
 - When changing room geometry: keep `maze.txt` and the matching 32×11 `playfield:` block in sync
