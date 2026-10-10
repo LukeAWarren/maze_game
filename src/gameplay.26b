@@ -352,7 +352,8 @@ _update_score_timer
   score = score + 1
 _end_score_timer
 
-  if !easter_egg_found && p1_room_number = ROOM_BOTTOM_LEFT && player1x <= TEMPLE_BALL_X && player1x >= TEMPLE_BALL_X - 3 && player1y <= TEMPLE_BALL_Y && player1y >= TEMPLE_BALL_Y - 3 then goto _start_easter_egg
+  ; Collect only when the ball fits inside the square, like the exact house target.
+  if !easter_egg_found && p1_room_number = ROOM_BOTTOM_LEFT && player1x = TEMPLE_BALL_CAPTURE_X && player1y = TEMPLE_BALL_CAPTURE_Y then goto _start_easter_egg
   if p0_room_number = p1_room_number && player1x = HOUSE_ENTRY_X && player1y = HOUSE_ENTRY_Y then goto _start_game_over
 
   COLUP0 = BLUE

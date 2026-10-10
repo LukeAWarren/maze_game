@@ -35,6 +35,14 @@ Reviewed against all six game sources and upstream batari Basic on **2026-10-10*
 
 ## Source Navigation
 
+### Temporary temple start for treasure-room development
+
+- **Currently enabled:** `const TEST_START_IN_TEMPLE = 1` near the top of `rescue_terri.26b`.
+- Starting from the title screen places both player-controlled missiles and Terri in `_room_bottom_left` (the temple), on open floor just above the ball: missile0 `(34,49)`, missile1 `(50,49)`, Terri `(41,49)`.
+- Bring Terri to the exact ball capture anchor `(39,54)` (two pixels left and five down from the test spawn), then use fire to resume after discovery. The normal passage to `_room_hidden` opens on the left. The ball/discovery sequence remains active; the house stays in `ROOM_RIGHT`.
+- **Restore the full game:** change only `TEST_START_IN_TEMPLE` to `0`, then run `sh ./build.sh` or `sh ./run.sh`. This restores the original room, missile positions, and Terri position. Reset returns to the title and uses the selected start mode again.
+- `_start_game` in `src/screens.26b` enters `_start_game_room` in bank 2. The assembler conditional there selects the test setup or the original `_inititial_game_room`; it adds no RAM state or bank 1 test logic.
+
 These files share one global variable and label namespace. File boundaries do not introduce bank switches or change execution order.
 
 | Compilation order | File | Contents | ROM bank |
@@ -73,8 +81,8 @@ These files share one global variable and label namespace. File boundaries do no
 - Obsolete April music-probe source and outputs were moved from `.cache/` to `poc/cache-archive-2026-10-10/`; they are historical experiments, not current game inputs.
 - Refresh generated cache files by running `sh ./build.sh`. Refresh the command reference separately against upstream compiler source and the linked manual; it is tracked documentation, not generated output. `.cache/build.log` describes only the latest build, including standalone builds.
 - Verified `rescue_terri.26b` build budget (2026-10-10):
-  - `10 bytes of ROM space left in bank 1`
-  - `1159 bytes of ROM space left in bank 2`
+  - `38 bytes of ROM space left in bank 1`
+  - `1124 bytes of ROM space left in bank 2` (temple test start enabled; 1156 with it disabled)
   - `4052 bytes of ROM space left in bank 3`
   - `2702 bytes of ROM space left in bank 4`
 
@@ -133,6 +141,7 @@ ENTRY_GATE_TOP_Y   = 8     ENTRY_GATE_BOT_Y   = 79
 
 ; Temple easter egg ball
 TEMPLE_BALL_X = 41    TEMPLE_BALL_Y = 53
+TEMPLE_BALL_CAPTURE_X = 39    TEMPLE_BALL_CAPTURE_Y = 54
 TEMPLE_BALL_VISIBLE_FRAMES = 45 ; visible frames per 60-frame score timer cycle
 
 ; Missile dimensions
@@ -162,7 +171,7 @@ J_DEBOUNCE_DELAY = 4
 - `player0` is the stationary objective sprite
 - `ball` is only used for the temple easter egg in `ROOM_BOTTOM_LEFT`
 - Victory starts when `player1` reaches `(HOUSE_ENTRY_X, HOUSE_ENTRY_Y) = (129, 74)` in `player0`'s room. The house sprite itself starts at `(127, 75)`.
-- Touching the temple ball triggers the easter egg, swaps the `player1` sprite art, and uses `_Easter_Egg_Melody` instead of `_Victory_Melody`
+- Centering the temple ball inside Terri's hollow square triggers the easter egg: `player1x = TEMPLE_BALL_CAPTURE_X` and `player1y = TEMPLE_BALL_CAPTURE_Y`, exactly `(39,54)`, in `ROOM_BOTTOM_LEFT`. Edge contact does not collect it. This swaps the `player1` sprite art and uses `_Easter_Egg_Melody` instead of `_Victory_Melody`.
 - Discovery also clears playfield columns 0–1 in rows 7–8 of `ROOM_BOTTOM_LEFT`, revealing the passage to `ROOM_HIDDEN`. The opening is visible during the celebration.
 - Either fire button resumes play after the easter egg, silences the music, and restores room colors. The passage stays open on subsequent visits until Reset starts a new run.
 - Game over freezes play and cycles the room colors through 9 presets
@@ -228,7 +237,7 @@ Use the source playfields as authoritative: the main `maze.txt` grid still conta
 - **Bank 2:** room setup, temple/hidden-room exit selection, passage reveal, and celebration/resume color helpers
 - **Bank 3:** currently unused
 - **Bank 4:** compiler-provided kernel and sprite graphics
-- `_inititial_game_room` is the startup entry point for the `ROOM_RIGHT` playfield/data and is also used when starting a new game
+- `_start_game_room` selects the new-game start using `TEST_START_IN_TEMPLE`; `_inititial_game_room` is the original `ROOM_RIGHT` playfield/data entry used when the test start is disabled
 
 Each bank 2 room routine ends with `goto _end_boundary_check bank1` to return to the main loop.
 

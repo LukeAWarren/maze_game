@@ -51,7 +51,7 @@ _start_game
   missile0y = START_M0_Y
   missile1x = START_M1_X
   missile1y = START_M1_Y
-  goto _inititial_game_room bank2
+  goto _start_game_room bank2
 
 
 _title_screen

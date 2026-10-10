@@ -6,6 +6,10 @@
   include div_mul.asm
   set romsize 16k
 
+  ; Temporary treasure-room testing: 1 starts both missiles and Terri in the temple.
+  ; Set to 0 and rebuild to restore the original full-game start in ROOM_RIGHT.
+  const TEST_START_IN_TEMPLE = 1
+
   ; room colors
   const BLACK = $00
   const WHITE = $0E
@@ -87,6 +91,10 @@
   const ROOM_HIDDEN = 10
   const TEMPLE_BALL_X = 41
   const TEMPLE_BALL_Y = 53
+  ; Anchor that centers the 2x2 ball inside Terri's 4x4 hollow square.
+  ; Standard-kernel player pixels start one pixel right of the ball's x origin.
+  const TEMPLE_BALL_CAPTURE_X = TEMPLE_BALL_X - 2
+  const TEMPLE_BALL_CAPTURE_Y = TEMPLE_BALL_Y + 1
   const TEMPLE_BALL_VISIBLE_FRAMES = 45
   const STATE_TITLE = 0
   const STATE_PLAY = 1
