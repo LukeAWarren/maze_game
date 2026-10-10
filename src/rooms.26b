@@ -1,9 +1,196 @@
  bank 2
 
   dim color_return_mode = temp1
-  dim p1_gate_transfer = temp1
+  ; Gate reads use temp1; pfhline uses temp1-temp3. Keep the direction in temp6.
+  dim p1_gate_transfer = temp6
+  dim p1_gate_step = temp3
+  dim p1_gate_last = temp4
+  dim p1_gate_cross = temp5
 
   ; Room playfields are 32 columns by 11 rows. X = wall, . = open floor.
+
+; Sweep Terri's whole 4x4 footprint to the old room's edge before replacing it.
+; The eight-pixel follow zone is forgiving only when that path is clear.
+_check_p1_exit
+  if !p1_gate_transfer then return thisbank
+  if p1_gate_transfer = P1_EXIT_LEFT then goto _check_p1_exit_left
+  if p1_gate_transfer = P1_EXIT_RIGHT then goto _check_p1_exit_right
+  if p1_gate_transfer = P1_EXIT_UP then goto _check_p1_exit_up
+  p1_gate_step = ((player1y - 4) / 8)
+  p1_gate_last = 10
+  goto _scan_p1_vertical_gate
+_check_p1_exit_up
+  p1_gate_step = 0
+  p1_gate_last = ((player1y - 1) / 8)
+  goto _scan_p1_vertical_gate
+_check_p1_exit_left
+  p1_gate_step = 0
+  p1_gate_last = ((player1x - 14) / 4)
+  goto _scan_p1_horizontal_gate
+_check_p1_exit_right
+  p1_gate_step = ((player1x - 17) / 4)
+  p1_gate_last = 31
+  goto _scan_p1_horizontal_gate
+
+; After loading the new playfield, also check the path from its edge to arrival.
+; Leave Terri's room and coordinates alone if either side is blocked.
+_finish_room_change
+  if !p1_gate_transfer then goto _end_boundary_check bank1
+  if p1_gate_transfer = P1_EXIT_LEFT then goto _enter_p1_from_right
+  if p1_gate_transfer = P1_EXIT_RIGHT then goto _enter_p1_from_left
+  if p1_gate_transfer = P1_EXIT_UP then goto _enter_p1_from_bottom
+  p1_gate_step = 0
+  p1_gate_last = (ENTRY_GATE_TOP_Y + P1_GATE_THRESHOLD - 1) / 8
+  gosub _scan_p1_vertical_gate
+  if p1_gate_transfer then player1y = ENTRY_GATE_TOP_Y + P1_GATE_THRESHOLD
+  goto _finish_p1_transfer
+_enter_p1_from_bottom
+  p1_gate_step = (ENTRY_GATE_BOT_Y - P1_GATE_THRESHOLD - 4) / 8
+  p1_gate_last = 10
+  gosub _scan_p1_vertical_gate
+  if p1_gate_transfer then player1y = ENTRY_GATE_BOT_Y - P1_GATE_THRESHOLD
+  goto _finish_p1_transfer
+_enter_p1_from_right
+  p1_gate_step = (ENTRY_GATE_RIGHT_X - P1_GATE_THRESHOLD - 17) / 4
+  p1_gate_last = 31
+  gosub _scan_p1_horizontal_gate
+  if p1_gate_transfer then player1x = ENTRY_GATE_RIGHT_X - P1_GATE_THRESHOLD
+  goto _finish_p1_transfer
+_enter_p1_from_left
+  p1_gate_step = 0
+  p1_gate_last = (ENTRY_GATE_LEFT_X + P1_GATE_THRESHOLD - 14) / 4
+  gosub _scan_p1_horizontal_gate
+  if p1_gate_transfer then player1x = ENTRY_GATE_LEFT_X + P1_GATE_THRESHOLD
+_finish_p1_transfer
+  if p1_gate_transfer then p1_room_number = mi_room_number
+  goto _end_boundary_check bank1
+
+; At most two rows/columns intersect Terri's footprint. Skip duplicate reads.
+_scan_p1_horizontal_gate
+  ; The current follow zone fits in one playfield byte. Test a combined mask
+  ; against both rows; retain the cell-by-cell fallback for wider future zones.
+  asm
+  lda p1_gate_step
+  eor p1_gate_last
+  and #$f8
+  bne ._scan_p1_horizontal_cells
+  lda #0
+  sta temp2
+  ldy p1_gate_step
+.p1_gate_mask_loop
+  tya
+  and #15
+  tax
+  lda ._p1_gate_bit_masks,x
+  ora temp2
+  sta temp2
+  cpy p1_gate_last
+  beq .p1_gate_mask_ready
+  iny
+  bne .p1_gate_mask_loop
+.p1_gate_mask_ready
+  lda p1_gate_step
+  lsr
+  lsr
+  lsr
+  sta temp1
+  lda player1y
+  sec
+  sbc #4
+  and #$f8
+  lsr
+  ora temp1
+  tay
+  lda playfield,y
+  and temp2
+  beq .p1_gate_top_clear
+  jmp ._p1_gate_blocked
+.p1_gate_top_clear
+  lda player1y
+  sec
+  sbc #1
+  and #$f8
+  lsr
+  ora temp1
+  tay
+  lda playfield,y
+  and temp2
+  beq .p1_gate_bottom_clear
+  jmp ._p1_gate_blocked
+.p1_gate_bottom_clear
+  rts
+end
+_scan_p1_horizontal_cells
+  p1_gate_cross = ((player1y - 4) / 8)
+  gosub _read_p1_horizontal_cell
+  if temp1 then goto _p1_gate_blocked
+  temp1 = ((player1y - 1) / 8)
+  if temp1 = p1_gate_cross then goto _next_p1_horizontal_gate
+  p1_gate_cross = temp1
+  gosub _read_p1_horizontal_cell
+  if temp1 then goto _p1_gate_blocked
+_next_p1_horizontal_gate
+  if p1_gate_step = p1_gate_last then return thisbank
+  p1_gate_step = p1_gate_step + 1
+  goto _scan_p1_horizontal_cells
+
+_scan_p1_vertical_gate
+  p1_gate_cross = ((player1x - 17) / 4)
+  gosub _read_p1_vertical_cell
+  if temp1 then goto _p1_gate_blocked
+  temp1 = ((player1x - 14) / 4)
+  if temp1 = p1_gate_cross then goto _next_p1_vertical_gate
+  p1_gate_cross = temp1
+  gosub _read_p1_vertical_cell
+  if temp1 then goto _p1_gate_blocked
+_next_p1_vertical_gate
+  if p1_gate_step = p1_gate_last then return thisbank
+  p1_gate_step = p1_gate_step + 1
+  goto _scan_p1_vertical_gate
+
+_p1_gate_blocked
+  p1_gate_transfer = 0
+  return thisbank
+
+; Read the standard kernel's 32-column playfield RAM here in bank 2.
+; Avoid a round trip to kernel-bank pfread for each cell during a room change.
+; A = column, Y = row; temp1 returns the wall bit (zero means open).
+_read_p1_horizontal_cell
+  asm
+  lda p1_gate_step
+  ldy p1_gate_cross
+  jmp ._read_p1_gate_cell
+end
+_read_p1_vertical_cell
+  asm
+  lda p1_gate_cross
+  ldy p1_gate_step
+end
+_read_p1_gate_cell
+  asm
+  tax
+  lsr
+  lsr
+  lsr
+  sta temp1
+  txa
+  and #15
+  tax
+  tya
+  asl
+  asl
+  ora temp1
+  tay
+  lda playfield,y
+  and ._p1_gate_bit_masks,x
+  sta temp1
+  rts
+end
+_p1_gate_bit_masks
+  asm
+  .byte $80,$40,$20,$10,$08,$04,$02,$01
+  .byte $01,$02,$04,$08,$10,$20,$40,$80
+end
 
 _temple_right_exit
   if mi_room_number = ROOM_HIDDEN then goto _room_bottom_left
@@ -91,20 +278,20 @@ _return_from_color_helper
   if color_return_mode then goto _title_music_loop bank3
   goto _end_boundary_check bank1
 
+_inititial_game_room
+  p1_gate_transfer = 0
+  goto _load_room_right
+
 _room_right
+  p1_gate_transfer = 0
   if mi_room_number = ROOM_MIDDLE then missile0x = ENTRY_GATE_LEFT_X
   if mi_room_number = ROOM_MIDDLE then missile1x = ENTRY_GATE_LEFT_X
-  p1_gate_transfer = 0
-  if mi_room_number = ROOM_MIDDLE && p1_room_number = ROOM_MIDDLE && player1y <> OFFSCRN_Y && player1x >= P1_FOLLOW_RIGHT_X then p1_gate_transfer = 1
-  if p1_gate_transfer then player1x = ENTRY_GATE_LEFT_X + P1_GATE_THRESHOLD
-  if p1_gate_transfer then p1_room_number = ROOM_RIGHT
+  if mi_room_number = ROOM_MIDDLE && p1_room_number = ROOM_MIDDLE && player1y <> OFFSCRN_Y && player1x >= P1_FOLLOW_RIGHT_X then p1_gate_transfer = P1_EXIT_RIGHT
   if mi_room_number = ROOM_BOTTOM_RIGHT then missile0y = ENTRY_GATE_BOT_Y
   if mi_room_number = ROOM_BOTTOM_RIGHT then missile1y = ENTRY_GATE_BOT_Y
-  p1_gate_transfer = 0
-  if mi_room_number = ROOM_BOTTOM_RIGHT && p1_room_number = ROOM_BOTTOM_RIGHT && player1y <> OFFSCRN_Y && player1y <= P1_FOLLOW_TOP_Y then p1_gate_transfer = 1
-  if p1_gate_transfer then player1y = ENTRY_GATE_BOT_Y - P1_GATE_THRESHOLD
-  if p1_gate_transfer then p1_room_number = ROOM_RIGHT
-_inititial_game_room
+  if mi_room_number = ROOM_BOTTOM_RIGHT && p1_room_number = ROOM_BOTTOM_RIGHT && player1y <> OFFSCRN_Y && player1y <= P1_FOLLOW_TOP_Y then p1_gate_transfer = P1_EXIT_UP
+  gosub _check_p1_exit
+_load_room_right
   mi_room_number = ROOM_RIGHT
   COLUBK = BLACK
   COLUPF = WHITE
@@ -121,35 +308,25 @@ _inititial_game_room
     .........................X.....X
     XXXXXXXXXXXXXXXXXXXXXXXXXX.X.X.X
 end
-  goto _end_boundary_check bank1
+  goto _finish_room_change
 
 _room_middle
+  p1_gate_transfer = 0
   ; depending on which room we came from
   ; set the correct horizonal or vertical starting position
   if mi_room_number = ROOM_RIGHT then missile0x = ENTRY_GATE_RIGHT_X
   if mi_room_number = ROOM_RIGHT then missile1x = ENTRY_GATE_RIGHT_X
-  p1_gate_transfer = 0
-  if mi_room_number = ROOM_RIGHT && p1_room_number = ROOM_RIGHT && player1y <> OFFSCRN_Y && player1x <= P1_FOLLOW_LEFT_X then p1_gate_transfer = 1
-  if p1_gate_transfer then player1x = ENTRY_GATE_RIGHT_X - P1_GATE_THRESHOLD
-  if p1_gate_transfer then p1_room_number = ROOM_MIDDLE
+  if mi_room_number = ROOM_RIGHT && p1_room_number = ROOM_RIGHT && player1y <> OFFSCRN_Y && player1x <= P1_FOLLOW_LEFT_X then p1_gate_transfer = P1_EXIT_LEFT
   if mi_room_number = ROOM_LEFT then missile0x = ENTRY_GATE_LEFT_X
   if mi_room_number = ROOM_LEFT then missile1x = ENTRY_GATE_LEFT_X
-  p1_gate_transfer = 0
-  if mi_room_number = ROOM_LEFT && p1_room_number = ROOM_LEFT && player1y <> OFFSCRN_Y && player1x >= P1_FOLLOW_RIGHT_X then p1_gate_transfer = 1
-  if p1_gate_transfer then player1x = ENTRY_GATE_LEFT_X + P1_GATE_THRESHOLD
-  if p1_gate_transfer then p1_room_number = ROOM_MIDDLE
+  if mi_room_number = ROOM_LEFT && p1_room_number = ROOM_LEFT && player1y <> OFFSCRN_Y && player1x >= P1_FOLLOW_RIGHT_X then p1_gate_transfer = P1_EXIT_RIGHT
   if mi_room_number = ROOM_TOP then missile0y = ENTRY_GATE_TOP_Y
   if mi_room_number = ROOM_TOP then missile1y = ENTRY_GATE_TOP_Y
-  p1_gate_transfer = 0
-  if mi_room_number = ROOM_TOP && p1_room_number = ROOM_TOP && player1y <> OFFSCRN_Y && player1y >= P1_FOLLOW_BOT_Y then p1_gate_transfer = 1
-  if p1_gate_transfer then player1y = ENTRY_GATE_TOP_Y + P1_GATE_THRESHOLD
-  if p1_gate_transfer then p1_room_number = ROOM_MIDDLE
+  if mi_room_number = ROOM_TOP && p1_room_number = ROOM_TOP && player1y <> OFFSCRN_Y && player1y >= P1_FOLLOW_BOT_Y then p1_gate_transfer = P1_EXIT_DOWN
   if mi_room_number = ROOM_BOTTOM then missile0y = ENTRY_GATE_BOT_Y
   if mi_room_number = ROOM_BOTTOM then missile1y = ENTRY_GATE_BOT_Y
-  p1_gate_transfer = 0
-  if mi_room_number = ROOM_BOTTOM && p1_room_number = ROOM_BOTTOM && player1y <> OFFSCRN_Y && player1y <= P1_FOLLOW_TOP_Y then p1_gate_transfer = 1
-  if p1_gate_transfer then player1y = ENTRY_GATE_BOT_Y - P1_GATE_THRESHOLD
-  if p1_gate_transfer then p1_room_number = ROOM_MIDDLE
+  if mi_room_number = ROOM_BOTTOM && p1_room_number = ROOM_BOTTOM && player1y <> OFFSCRN_Y && player1y <= P1_FOLLOW_TOP_Y then p1_gate_transfer = P1_EXIT_UP
+  gosub _check_p1_exit
   mi_room_number = ROOM_MIDDLE
   COLUBK = OLIVE_DARK
   COLUPF = OLIVE_LIGHT
@@ -166,21 +343,17 @@ _room_middle
     X..X.......X.X..................
     X..XX.....XX.XXXXXXXXXXXXXXXXXXX
 end
-  goto _end_boundary_check bank1
+  goto _finish_room_change
 
 _room_left
+  p1_gate_transfer = 0
   if mi_room_number = ROOM_MIDDLE then missile0x = ENTRY_GATE_RIGHT_X
   if mi_room_number = ROOM_MIDDLE then missile1x = ENTRY_GATE_RIGHT_X
-  p1_gate_transfer = 0
-  if mi_room_number = ROOM_MIDDLE && p1_room_number = ROOM_MIDDLE && player1y <> OFFSCRN_Y && player1x <= P1_FOLLOW_LEFT_X then p1_gate_transfer = 1
-  if p1_gate_transfer then player1x = ENTRY_GATE_RIGHT_X - P1_GATE_THRESHOLD
-  if p1_gate_transfer then p1_room_number = ROOM_LEFT
+  if mi_room_number = ROOM_MIDDLE && p1_room_number = ROOM_MIDDLE && player1y <> OFFSCRN_Y && player1x <= P1_FOLLOW_LEFT_X then p1_gate_transfer = P1_EXIT_LEFT
   if mi_room_number = ROOM_TOP_LEFT then missile0y = ENTRY_GATE_TOP_Y
   if mi_room_number = ROOM_TOP_LEFT then missile1y = ENTRY_GATE_TOP_Y
-  p1_gate_transfer = 0
-  if mi_room_number = ROOM_TOP_LEFT && p1_room_number = ROOM_TOP_LEFT && player1y <> OFFSCRN_Y && player1y >= P1_FOLLOW_BOT_Y then p1_gate_transfer = 1
-  if p1_gate_transfer then player1y = ENTRY_GATE_TOP_Y + P1_GATE_THRESHOLD
-  if p1_gate_transfer then p1_room_number = ROOM_LEFT
+  if mi_room_number = ROOM_TOP_LEFT && p1_room_number = ROOM_TOP_LEFT && player1y <> OFFSCRN_Y && player1y >= P1_FOLLOW_BOT_Y then p1_gate_transfer = P1_EXIT_DOWN
+  gosub _check_p1_exit
   mi_room_number = ROOM_LEFT
   COLUBK = GRAY_DARK
   COLUPF = GRAY_LIGHT
@@ -197,27 +370,20 @@ _room_left
     X..............................X
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 end
-  goto _end_boundary_check bank1
+  goto _finish_room_change
 
 _room_top
+  p1_gate_transfer = 0
   if mi_room_number = ROOM_MIDDLE then missile0y = ENTRY_GATE_BOT_Y
   if mi_room_number = ROOM_MIDDLE then missile1y = ENTRY_GATE_BOT_Y
-  p1_gate_transfer = 0
-  if mi_room_number = ROOM_MIDDLE && p1_room_number = ROOM_MIDDLE && player1y <> OFFSCRN_Y && player1y <= P1_FOLLOW_TOP_Y then p1_gate_transfer = 1
-  if p1_gate_transfer then player1y = ENTRY_GATE_BOT_Y - P1_GATE_THRESHOLD
-  if p1_gate_transfer then p1_room_number = ROOM_TOP
+  if mi_room_number = ROOM_MIDDLE && p1_room_number = ROOM_MIDDLE && player1y <> OFFSCRN_Y && player1y <= P1_FOLLOW_TOP_Y then p1_gate_transfer = P1_EXIT_UP
   if mi_room_number = ROOM_TOP_LEFT then missile0x = ENTRY_GATE_LEFT_X
   if mi_room_number = ROOM_TOP_LEFT then missile1x = ENTRY_GATE_LEFT_X
-  p1_gate_transfer = 0
-  if mi_room_number = ROOM_TOP_LEFT && p1_room_number = ROOM_TOP_LEFT && player1y <> OFFSCRN_Y && player1x >= P1_FOLLOW_RIGHT_X then p1_gate_transfer = 1
-  if p1_gate_transfer then player1x = ENTRY_GATE_LEFT_X + P1_GATE_THRESHOLD
-  if p1_gate_transfer then p1_room_number = ROOM_TOP
+  if mi_room_number = ROOM_TOP_LEFT && p1_room_number = ROOM_TOP_LEFT && player1y <> OFFSCRN_Y && player1x >= P1_FOLLOW_RIGHT_X then p1_gate_transfer = P1_EXIT_RIGHT
   if mi_room_number = ROOM_TOP_RIGHT then missile0x = ENTRY_GATE_RIGHT_X
   if mi_room_number = ROOM_TOP_RIGHT then missile1x = ENTRY_GATE_RIGHT_X
-  p1_gate_transfer = 0
-  if mi_room_number = ROOM_TOP_RIGHT && p1_room_number = ROOM_TOP_RIGHT && player1y <> OFFSCRN_Y && player1x <= P1_FOLLOW_LEFT_X then p1_gate_transfer = 1
-  if p1_gate_transfer then player1x = ENTRY_GATE_RIGHT_X - P1_GATE_THRESHOLD
-  if p1_gate_transfer then p1_room_number = ROOM_TOP
+  if mi_room_number = ROOM_TOP_RIGHT && p1_room_number = ROOM_TOP_RIGHT && player1y <> OFFSCRN_Y && player1x <= P1_FOLLOW_LEFT_X then p1_gate_transfer = P1_EXIT_LEFT
+  gosub _check_p1_exit
   mi_room_number = ROOM_TOP
   COLUBK = GREEN_DARK
   COLUPF = GREEN_LIGHT
@@ -234,27 +400,20 @@ _room_top
     X...............X..X............
     XXXXXXXXXXXXXX..X..X..XXXXXXXXXX
 end
-  goto _end_boundary_check bank1
+  goto _finish_room_change
 
 _room_bottom
+  p1_gate_transfer = 0
   if mi_room_number = ROOM_MIDDLE then missile0y = ENTRY_GATE_TOP_Y
   if mi_room_number = ROOM_MIDDLE then missile1y = ENTRY_GATE_TOP_Y
-  p1_gate_transfer = 0
-  if mi_room_number = ROOM_MIDDLE && p1_room_number = ROOM_MIDDLE && player1y <> OFFSCRN_Y && player1y >= P1_FOLLOW_BOT_Y then p1_gate_transfer = 1
-  if p1_gate_transfer then player1y = ENTRY_GATE_TOP_Y + P1_GATE_THRESHOLD
-  if p1_gate_transfer then p1_room_number = ROOM_BOTTOM
+  if mi_room_number = ROOM_MIDDLE && p1_room_number = ROOM_MIDDLE && player1y <> OFFSCRN_Y && player1y >= P1_FOLLOW_BOT_Y then p1_gate_transfer = P1_EXIT_DOWN
   if mi_room_number = ROOM_BOTTOM_LEFT then missile0x = ENTRY_GATE_LEFT_X
   if mi_room_number = ROOM_BOTTOM_LEFT then missile1x = ENTRY_GATE_LEFT_X
-  p1_gate_transfer = 0
-  if mi_room_number = ROOM_BOTTOM_LEFT && p1_room_number = ROOM_BOTTOM_LEFT && player1y <> OFFSCRN_Y && player1x >= P1_FOLLOW_RIGHT_X then p1_gate_transfer = 1
-  if p1_gate_transfer then player1x = ENTRY_GATE_LEFT_X + P1_GATE_THRESHOLD
-  if p1_gate_transfer then p1_room_number = ROOM_BOTTOM
+  if mi_room_number = ROOM_BOTTOM_LEFT && p1_room_number = ROOM_BOTTOM_LEFT && player1y <> OFFSCRN_Y && player1x >= P1_FOLLOW_RIGHT_X then p1_gate_transfer = P1_EXIT_RIGHT
   if mi_room_number = ROOM_BOTTOM_RIGHT then missile0x = ENTRY_GATE_RIGHT_X
   if mi_room_number = ROOM_BOTTOM_RIGHT then missile1x = ENTRY_GATE_RIGHT_X
-  p1_gate_transfer = 0
-  if mi_room_number = ROOM_BOTTOM_RIGHT && p1_room_number = ROOM_BOTTOM_RIGHT && player1y <> OFFSCRN_Y && player1x <= P1_FOLLOW_LEFT_X then p1_gate_transfer = 1
-  if p1_gate_transfer then player1x = ENTRY_GATE_RIGHT_X - P1_GATE_THRESHOLD
-  if p1_gate_transfer then p1_room_number = ROOM_BOTTOM
+  if mi_room_number = ROOM_BOTTOM_RIGHT && p1_room_number = ROOM_BOTTOM_RIGHT && player1y <> OFFSCRN_Y && player1x <= P1_FOLLOW_LEFT_X then p1_gate_transfer = P1_EXIT_LEFT
+  gosub _check_p1_exit
   mi_room_number = ROOM_BOTTOM
   COLUBK = PURPLE_DARK
   COLUPF = PURPLE_LIGHT
@@ -271,15 +430,14 @@ _room_bottom
     ...............................X
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 end
-  goto _end_boundary_check bank1
+  goto _finish_room_change
 
 _room_top_right
+  p1_gate_transfer = 0
   if mi_room_number = ROOM_TOP then missile0x = ENTRY_GATE_LEFT_X
   if mi_room_number = ROOM_TOP then missile1x = ENTRY_GATE_LEFT_X
-  p1_gate_transfer = 0
-  if mi_room_number = ROOM_TOP && p1_room_number = ROOM_TOP && player1y <> OFFSCRN_Y && player1x >= P1_FOLLOW_RIGHT_X then p1_gate_transfer = 1
-  if p1_gate_transfer then player1x = ENTRY_GATE_LEFT_X + P1_GATE_THRESHOLD
-  if p1_gate_transfer then p1_room_number = ROOM_TOP_RIGHT
+  if mi_room_number = ROOM_TOP && p1_room_number = ROOM_TOP && player1y <> OFFSCRN_Y && player1x >= P1_FOLLOW_RIGHT_X then p1_gate_transfer = P1_EXIT_RIGHT
+  gosub _check_p1_exit
   mi_room_number = ROOM_TOP_RIGHT
   COLUBK = GOLD_DARK
   COLUPF = GOLD_LIGHT
@@ -296,21 +454,17 @@ _room_top_right
     ...............................X
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 end
-  goto _end_boundary_check bank1
+  goto _finish_room_change
 
 _room_top_left
+  p1_gate_transfer = 0
   if mi_room_number = ROOM_TOP then missile0x = ENTRY_GATE_RIGHT_X
   if mi_room_number = ROOM_TOP then missile1x = ENTRY_GATE_RIGHT_X
-  p1_gate_transfer = 0
-  if mi_room_number = ROOM_TOP && p1_room_number = ROOM_TOP && player1y <> OFFSCRN_Y && player1x <= P1_FOLLOW_LEFT_X then p1_gate_transfer = 1
-  if p1_gate_transfer then player1x = ENTRY_GATE_RIGHT_X - P1_GATE_THRESHOLD
-  if p1_gate_transfer then p1_room_number = ROOM_TOP_LEFT
+  if mi_room_number = ROOM_TOP && p1_room_number = ROOM_TOP && player1y <> OFFSCRN_Y && player1x <= P1_FOLLOW_LEFT_X then p1_gate_transfer = P1_EXIT_LEFT
   if mi_room_number = ROOM_LEFT then missile0y = ENTRY_GATE_BOT_Y
   if mi_room_number = ROOM_LEFT then missile1y = ENTRY_GATE_BOT_Y
-  p1_gate_transfer = 0
-  if mi_room_number = ROOM_LEFT && p1_room_number = ROOM_LEFT && player1y <> OFFSCRN_Y && player1y <= P1_FOLLOW_TOP_Y then p1_gate_transfer = 1
-  if p1_gate_transfer then player1y = ENTRY_GATE_BOT_Y - P1_GATE_THRESHOLD
-  if p1_gate_transfer then p1_room_number = ROOM_TOP_LEFT
+  if mi_room_number = ROOM_LEFT && p1_room_number = ROOM_LEFT && player1y <> OFFSCRN_Y && player1y <= P1_FOLLOW_TOP_Y then p1_gate_transfer = P1_EXIT_UP
+  gosub _check_p1_exit
   mi_room_number = ROOM_TOP_LEFT
   COLUBK = BRICK_DARK
   COLUPF = BRICK_LIGHT
@@ -327,22 +481,18 @@ _room_top_left
     X........X......X...X..........X
     X........X......X...XXXXXXXXXXXX
 end
-  goto _end_boundary_check bank1
+  goto _finish_room_change
 
 ; temple room
 _room_bottom_left
+  p1_gate_transfer = 0
   if mi_room_number = ROOM_BOTTOM then missile0x = ENTRY_GATE_RIGHT_X
   if mi_room_number = ROOM_BOTTOM then missile1x = ENTRY_GATE_RIGHT_X
-  p1_gate_transfer = 0
-  if mi_room_number = ROOM_BOTTOM && p1_room_number = ROOM_BOTTOM && player1y <> OFFSCRN_Y && player1x <= P1_FOLLOW_LEFT_X then p1_gate_transfer = 1
-  if p1_gate_transfer then player1x = ENTRY_GATE_RIGHT_X - P1_GATE_THRESHOLD
-  if p1_gate_transfer then p1_room_number = ROOM_BOTTOM_LEFT
+  if mi_room_number = ROOM_BOTTOM && p1_room_number = ROOM_BOTTOM && player1y <> OFFSCRN_Y && player1x <= P1_FOLLOW_LEFT_X then p1_gate_transfer = P1_EXIT_LEFT
   if mi_room_number = ROOM_HIDDEN then missile0x = ENTRY_GATE_LEFT_X
   if mi_room_number = ROOM_HIDDEN then missile1x = ENTRY_GATE_LEFT_X
-  p1_gate_transfer = 0
-  if mi_room_number = ROOM_HIDDEN && p1_room_number = ROOM_HIDDEN && player1y <> OFFSCRN_Y && player1x >= P1_FOLLOW_RIGHT_X then p1_gate_transfer = 1
-  if p1_gate_transfer then player1x = ENTRY_GATE_LEFT_X + P1_GATE_THRESHOLD
-  if p1_gate_transfer then p1_room_number = ROOM_BOTTOM_LEFT
+  if mi_room_number = ROOM_HIDDEN && p1_room_number = ROOM_HIDDEN && player1y <> OFFSCRN_Y && player1x >= P1_FOLLOW_RIGHT_X then p1_gate_transfer = P1_EXIT_RIGHT
+  gosub _check_p1_exit
   mi_room_number = ROOM_BOTTOM_LEFT
   COLUBK = ORANGE_DARK
   COLUPF = ORANGE_LIGHT
@@ -360,16 +510,15 @@ _room_bottom_left
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 end
   if easter_egg_found then gosub _open_hidden_passage
-  goto _end_boundary_check bank1
+  goto _finish_room_change
 
 ; treasure room
 _room_hidden
+  p1_gate_transfer = 0
   if mi_room_number = ROOM_BOTTOM_LEFT then missile0x = ENTRY_GATE_RIGHT_X
   if mi_room_number = ROOM_BOTTOM_LEFT then missile1x = ENTRY_GATE_RIGHT_X
-  p1_gate_transfer = 0
-  if mi_room_number = ROOM_BOTTOM_LEFT && p1_room_number = ROOM_BOTTOM_LEFT && player1y <> OFFSCRN_Y && player1x <= P1_FOLLOW_LEFT_X then p1_gate_transfer = 1
-  if p1_gate_transfer then player1x = ENTRY_GATE_RIGHT_X - P1_GATE_THRESHOLD
-  if p1_gate_transfer then p1_room_number = ROOM_HIDDEN
+  if mi_room_number = ROOM_BOTTOM_LEFT && p1_room_number = ROOM_BOTTOM_LEFT && player1y <> OFFSCRN_Y && player1x <= P1_FOLLOW_LEFT_X then p1_gate_transfer = P1_EXIT_LEFT
+  gosub _check_p1_exit
   mi_room_number = ROOM_HIDDEN
   COLUBK = BLACK
   COLUPF = GOLD_LIGHT
@@ -386,21 +535,17 @@ _room_hidden
     X..............................X
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 end
-  goto _end_boundary_check bank1
+  goto _finish_room_change
 
 _room_bottom_right
+  p1_gate_transfer = 0
   if mi_room_number = ROOM_BOTTOM then missile0x = ENTRY_GATE_LEFT_X
   if mi_room_number = ROOM_BOTTOM then missile1x = ENTRY_GATE_LEFT_X
-  p1_gate_transfer = 0
-  if mi_room_number = ROOM_BOTTOM && p1_room_number = ROOM_BOTTOM && player1y <> OFFSCRN_Y && player1x >= P1_FOLLOW_RIGHT_X then p1_gate_transfer = 1
-  if p1_gate_transfer then player1x = ENTRY_GATE_LEFT_X + P1_GATE_THRESHOLD
-  if p1_gate_transfer then p1_room_number = ROOM_BOTTOM_RIGHT
+  if mi_room_number = ROOM_BOTTOM && p1_room_number = ROOM_BOTTOM && player1y <> OFFSCRN_Y && player1x >= P1_FOLLOW_RIGHT_X then p1_gate_transfer = P1_EXIT_RIGHT
   if mi_room_number = ROOM_RIGHT then missile0y = ENTRY_GATE_TOP_Y
   if mi_room_number = ROOM_RIGHT then missile1y = ENTRY_GATE_TOP_Y
-  p1_gate_transfer = 0
-  if mi_room_number = ROOM_RIGHT && p1_room_number = ROOM_RIGHT && player1y <> OFFSCRN_Y && player1y >= P1_FOLLOW_BOT_Y then p1_gate_transfer = 1
-  if p1_gate_transfer then player1y = ENTRY_GATE_TOP_Y + P1_GATE_THRESHOLD
-  if p1_gate_transfer then p1_room_number = ROOM_BOTTOM_RIGHT
+  if mi_room_number = ROOM_RIGHT && p1_room_number = ROOM_RIGHT && player1y <> OFFSCRN_Y && player1y >= P1_FOLLOW_BOT_Y then p1_gate_transfer = P1_EXIT_DOWN
+  gosub _check_p1_exit
   mi_room_number = ROOM_BOTTOM_RIGHT
   COLUBK = TEAL_DARK
   COLUPF = TEAL_LIGHT
@@ -417,4 +562,4 @@ _room_bottom_right
     X.......X......................X
     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 end
-  goto _end_boundary_check bank1
+  goto _finish_room_change

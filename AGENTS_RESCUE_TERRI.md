@@ -80,7 +80,7 @@ These files share one global variable and label namespace. Explicit `bank` decla
 - Refresh generated cache files by running `sh ./build.sh`. Refresh the command reference separately against upstream compiler source and the linked manual; it is tracked documentation, not generated output. `.cache/build.log` describes only the latest build, including standalone builds.
 - Verified `rescue_terri.26b` build budget (2026-10-10):
   - `566 bytes of ROM space left in bank 1`
-  - `1224 bytes of ROM space left in bank 2`
+  - `1232 bytes of ROM space left in bank 2`
   - `3292 bytes of ROM space left in bank 3`
   - `2702 bytes of ROM space left in bank 4`
 
@@ -239,7 +239,7 @@ Use the source playfields as authoritative: the main `maze.txt` grid still conta
 - **Bank 4:** compiler-provided kernel and sprite graphics
 - `_start_game` enters `_inititial_game_room` directly to load the original `ROOM_RIGHT` playfield and colors
 
-Each bank 2 room routine ends with `goto _end_boundary_check bank1` to return to the main loop.
+Each bank 2 room routine ends with `goto _finish_room_change`, which checks Terri's arrival path before returning to `_end_boundary_check bank1`.
 
 **Cost:** `goto bankN` = 49 cycles per jump. A room transition jumps to bank 2 and back; celebration colors also use bank 2. Keep cross-bank jumps to a minimum.
 
@@ -251,10 +251,13 @@ Music readers and all `sdata` streams therefore live together in bank 3. Bank 1 
 - Room transitions are decided in the bank 1 boundary-check section
 - `ROOM_BOTTOM_LEFT` and `ROOM_HIDDEN` share horizontal edge checks. Bank 2 routes their exits; entry to the hidden room requires `easter_egg_found`.
 - Missile repositioning for the new room happens inside the bank 2 room init label
-- Player1 doorway-follow logic also lives inside the destination room init block
-- Player1 follows through a doorway if it is in the room being left, visible, and within `P1_GATE_FOLLOW_DISTANCE = 8` coordinate units inward from the exit boundary. The checks are inclusive and consistent: left `x <= 26`, right `x >= 134`, top `y <= 12`, bottom `y >= 79`.
+- Each destination room selects a possible follow direction when Terri is in the room being left, visible, and within `P1_GATE_FOLLOW_DISTANCE = 8` coordinate units inward from the exit boundary. The checks are inclusive and consistent: left `x <= 26`, right `x >= 134`, top `y <= 12`, bottom `y >= 79`.
+- `_check_p1_exit` checks the full path from Terri's 4x4 footprint to the old room's edge before replacing the playfield. `_finish_room_change` then checks from the new room's edge to the arrival position. Only clear paths on both sides permit transfer; otherwise Terri keeps her old room and coordinates and is hidden normally.
+- This prevents following through a wall merely because Terri is close to the screen edge, including the left wall below the upper corridor in `ROOM_TOP`. Both checks read the live playfield, so the unlocked temple passage works normally.
+- Gate checks read standard-kernel playfield RAM directly in bank 2 to avoid repeated bank switches. Horizontal spans within one byte use a combined wall mask; spans across bytes use individual cell reads. The direction is stored in `temp6`, which survives room loading and `_open_hidden_passage`; `temp1`/`temp2` are scratch and `temp3`–`temp5` hold scan coordinates. No additional persistent RAM is allocated.
 - Adjust `P1_GATE_FOLLOW_DISTANCE` in `rescue_terri.26b` to tune how forgiving departures are. `P1_GATE_THRESHOLD = 2` controls arrival placement separately, so widening the follow zone does not move Terri deeper into the destination room.
 - Horizontal transfers preserve `player1y`; vertical transfers preserve `player1x`
+- Verified the compiled ROM against 3,144 positions across all 22 directed room connections, including blocked exits, blocked arrivals, the eight-pixel range, hidden/absent Terri, and the original Room Right start. These CPU checks do not render Stella's display.
 
 ## Current Room Map
 
@@ -318,4 +321,4 @@ ROOM_HIDDEN       BLACK / GOLD_LIGHT
 - There are currently no free registers; all new variable aliases must reuse an existing register only when the usage does not overlap
 - Do not reuse `u`/`v` or `w`/`x` for frame-to-frame state while title music is active; they are `sdata` pointers
 - Temp variables (`temp1`–`temp6`) are safe to re-alias within a block but are clobbered by `drawscreen` — never rely on them across frames
-- Do not use `collision()` for wall detection — the manual `pfread()` system is intentional and required for the coordinate-based approach
+- Do not use `collision()` for wall detection — movement uses `pfread()`, and doorway checks read the same playfield RAM directly in bank 2
